@@ -5,4 +5,9 @@
     <color name="colorAccent">#D81B60</color>
 
     <color name="black_overlay">#ff000000</color>
+
+    <color name="colorText">#ffffff</color>
+    <color name="colorJoystickBackGround">#00060606</color>
+    <color name="colorJoystickButton">#bebeba</color>
+    <color name="colorJoystickBorder">#696767</color>
 </resources>
