@@ -8,4 +8,47 @@
     android:background="@color/black_overlay"
     tools:context=".FullscreenActivity">
 
+    <VideoView
+        android:id="@+id/videoView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center" />
+
+    <io.github.controlwear.virtual.joystick.android.JoystickView xmlns:custom="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/joystickView_Left"
+        android:layout_width="wrap_content"
+        android:layout_height="200dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginStart="24dp"
+        android:layout_gravity="bottom"
+        custom:JV_autoReCenterButton="false"
+        custom:JV_backgroundColor="@color/colorJoystickBackGround"
+        custom:JV_backgroundSizeRatio="80%"
+        custom:JV_borderColor="@color/colorJoystickBorder"
+        custom:JV_borderWidth="4dp"
+        custom:JV_buttonColor="@color/colorJoystickButton"
+        custom:JV_buttonSizeRatio="15%" />
+
+    <ToggleButton
+        android:id="@+id/button_toggle_cut"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginRight="24dp"
+        android:layout_gravity="bottom|end"
+        android:textOff="@string/button_toggle_off"
+        android:textOn="@string/button_toggle_on" />
+
+    <Button
+        android:id="@+id/button_reset_joy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginStart="24dp"
+        android:layout_gravity="bottom|center"
+        android:text="@string/button_reset"/>
+
 </FrameLayout>

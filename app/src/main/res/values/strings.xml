@@ -4,18 +4,16 @@
 
     <string name="title_activity_settings">Settings</string>
 
-    <!-- Strings related to Settings -->
+    <!-- Strings related to MainApp -->
 
-    <!-- Example General settings -->
-    <string name="pref_header_general">General</string>
-
+    <string name="button_reset">Reset</string>
     <string name="button_toggle_on">Cutting</string>
     <string name="button_toggle_off">Not cutting</string>
 
     <string name="msg_wifi_not_connected">This app requires wi-fi connection.
                                           Please connect to an access point before it is used.</string>
     <string name="msg_wifi_connected">Wifi connected. The app is ready to use.</string>
-    <string name="msg_server_not_found">Server is not found, on ip or port configured on settings./n
+    <string name="msg_server_not_found">Server is not found, on ip or port configured on settings.\n
                                         Make sure that ip and port you have entered are correctly and
                                         host server is running.</string>
 
