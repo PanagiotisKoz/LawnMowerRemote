@@ -6,7 +6,7 @@
 
     <!-- Strings related to MainApp -->
 
-    <string name="button_reset">Reset</string>
+    <string name="button_reset">Reset</string>>
     <string name="button_toggle_on">Cutting</string>
     <string name="button_toggle_off">Not cutting</string>
 

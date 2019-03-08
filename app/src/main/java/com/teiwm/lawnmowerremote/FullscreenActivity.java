@@ -314,8 +314,6 @@ public class FullscreenActivity extends AppCompatActivity {
         m_jstck_move_vihicle.setLayoutParams(joystickparams);
         m_btn_toggle_cut.setLayoutParams(togglebtnparams);
 
-
-
         if (!m_Client.isConnected()) {
             SetEnableControls(false); // Disable controls when raspberry not found.
             ShowMessageBox(getString(R.string.msg_server_not_found));
@@ -375,5 +373,6 @@ public class FullscreenActivity extends AppCompatActivity {
         dialog.setMessage(str);
         dialog.show();
     }
+
 }
 
