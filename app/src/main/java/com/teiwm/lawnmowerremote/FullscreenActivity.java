@@ -8,7 +8,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -21,27 +20,26 @@ import android.view.MenuInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.content.Intent;
-import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
+import android.widget.Switch;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 import io.github.controlwear.virtual.joystick.android.JoystickView;
 
 /**
- * An example full-screen activity that shows and hides the system UI (i.e.
+ * An full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
 public class FullscreenActivity extends AppCompatActivity {
     private TCPClient m_Client;
-    private int m_joy_angle = 0;
+
+    private Lawn_protocol.cmd_move m_move_dir;
     private int m_joy_strength = 0;
-    private int m_max_cutting_speed = 80;
     private boolean m_cutting_active = false;
+    private boolean m_connected = false; // If the app is connected to RPi server then true.
     private BroadcastReceiver m_ConnectivityReceiver = null;
 
-    private Button m_btn_reset_joy = null;
-    private ToggleButton m_btn_toggle_cut = null;
+    private Switch m_btn_switch_cut = null;
     private JoystickView m_jstck_move_vihicle = null;
 
     /**
@@ -106,7 +104,6 @@ public class FullscreenActivity extends AppCompatActivity {
         public boolean onTouch(View view, MotionEvent motionEvent) {
             switch (motionEvent.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    //some code....
                     break;
                 case MotionEvent.ACTION_UP:
                     view.performClick();
@@ -219,48 +216,49 @@ public class FullscreenActivity extends AppCompatActivity {
     }
 
     protected boolean CheckWifiState() {
-        NetworkInfo mWifi;
+        NetworkInfo net_info;
         ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        if ( connManager != null )
-            mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        else return false;
+        net_info = connManager.getActiveNetworkInfo();
 
-        return mWifi.isConnected();
+        if ( net_info != null )
+            return net_info.getType() == ConnectivityManager.TYPE_WIFI;
+
+        return false;
     }
 
     protected void Initialize() {
 
-        m_jstck_move_vihicle = (JoystickView) findViewById(R.id.joystickView_Left);
+        m_jstck_move_vihicle = findViewById(R.id.joystickView_Left);
         m_jstck_move_vihicle.setOnMoveListener(new JoystickView.OnMoveListener()
         {
             @Override
             public void onMove(int angle, int strength) {
-                m_joy_angle = angle;
 
-                if (angle > 180)
-                    m_joy_strength = -strength;
-                else
-                    m_joy_strength = strength;
+                m_joy_strength = strength;
 
-                if (m_cutting_active && m_joy_strength > m_max_cutting_speed )
-                    m_joy_strength = m_max_cutting_speed;
+                if (angle >= 337 || angle <= 22 )
+                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_right;
+                if (angle > 22 && angle <= 67 )
+                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_fr;
+                if (angle > 67 && angle <= 112 )
+                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_forward;
+                if (angle > 112 && angle <= 157 )
+                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_fl;
+                if (angle > 157 && angle <= 202 )
+                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_left;
+                if (angle > 202 && angle <= 247 )
+                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_bl;
+                if (angle > 247 && angle <= 292 )
+                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_backward;
+                if (angle > 292 && angle <= 337 )
+                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_br;
             }
         });
 
-        m_btn_toggle_cut = (ToggleButton) findViewById(R.id.button_toggle_cut);
-        m_btn_toggle_cut.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        m_btn_switch_cut =  findViewById(R.id.button_switch_cut);
+        m_btn_switch_cut.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 m_cutting_active = isChecked;
-            }
-        });
-
-        m_btn_reset_joy = (Button) findViewById(R.id.button_reset_joy);
-        m_btn_reset_joy.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                m_jstck_move_vihicle.resetButtonPosition();
-                m_jstck_move_vihicle.invalidate();
-                m_joy_angle = 0;
-                m_joy_strength = 0;
             }
         });
 
@@ -277,22 +275,27 @@ public class FullscreenActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
         SharedPreferences sharedPref = getSharedPreferences(getPackageName() + "_preferences", MODE_PRIVATE);
 
         // TODO: Add functionality to read settings value for enabling video feed.
 
         if ( CheckWifiState() ) {
             ShowToast(getString(R.string.msg_wifi_connected));
-            String ip = sharedPref.getString("key_settings_ip", "127.0.0.1");
-            int port = 0;
+
+            String ip = sharedPref.getString("key_settings_ip", "@string/pref_default_ip_value");
+            int port;
             try {
                 port = Integer.parseInt(sharedPref.getString("key_settings_port", "@string/pref_default_port_value"));
             } catch (NumberFormatException nfe) {
+                ShowToast(getString(R.string.msg_wrong_wifi_port));
                 port = 8080;
             }
 
             m_Client = new TCPClient();
             m_Client.Connect(ip, port);
+            if ( m_Client.isConnected() )
+                m_connected = true;
         }
         else {
             ShowToast(getString(R.string.msg_wifi_not_connected));
@@ -300,10 +303,10 @@ public class FullscreenActivity extends AppCompatActivity {
 
 
         FrameLayout.LayoutParams joystickparams = (FrameLayout.LayoutParams) m_jstck_move_vihicle.getLayoutParams();
-        FrameLayout.LayoutParams togglebtnparams = (FrameLayout.LayoutParams) m_btn_toggle_cut.getLayoutParams();
+        FrameLayout.LayoutParams togglebtnparams = (FrameLayout.LayoutParams) m_btn_switch_cut.getLayoutParams();
 
 
-        if (sharedPref.getBoolean("key_settings_mirror_controls", false)) {
+        if ( sharedPref.getBoolean("key_settings_mirror_controls", false) ) {
             joystickparams.gravity = (Gravity.BOTTOM | Gravity.END);
             togglebtnparams.gravity = (Gravity.BOTTOM | Gravity.START);
         } else {
@@ -312,9 +315,9 @@ public class FullscreenActivity extends AppCompatActivity {
         }
 
         m_jstck_move_vihicle.setLayoutParams(joystickparams);
-        m_btn_toggle_cut.setLayoutParams(togglebtnparams);
+        m_btn_switch_cut.setLayoutParams(togglebtnparams);
 
-        if (!m_Client.isConnected()) {
+        if ( !m_connected ) {
             SetEnableControls(false); // Disable controls when raspberry not found.
             ShowMessageBox(getString(R.string.msg_server_not_found));
         }
@@ -327,7 +330,8 @@ public class FullscreenActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        m_Client.Disconnect();
+        if ( m_connected )
+            m_Client.Disconnect();
     }
 
     @Override
@@ -338,14 +342,12 @@ public class FullscreenActivity extends AppCompatActivity {
     }
 
     private void SetEnableControls(boolean state) {
-        if (state){
-            m_btn_reset_joy.setEnabled(true);
-            m_btn_toggle_cut.setEnabled(true);
+        if (state) {
+            m_btn_switch_cut.setEnabled(true);
             m_jstck_move_vihicle.setEnabled(true);
         }
         else {
-            m_btn_reset_joy.setEnabled(false);
-            m_btn_toggle_cut.setEnabled(false);
+            m_btn_switch_cut.setEnabled(false);
             m_jstck_move_vihicle.setEnabled(false);
         }
 

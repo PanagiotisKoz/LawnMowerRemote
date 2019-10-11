@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
 
     android:id="@+id/fullscreen_content"
@@ -14,41 +15,33 @@
         android:layout_height="match_parent"
         android:layout_gravity="center" />
 
-    <io.github.controlwear.virtual.joystick.android.JoystickView xmlns:custom="http://schemas.android.com/apk/res-auto"
+    <io.github.controlwear.virtual.joystick.android.JoystickView
         android:id="@+id/joystickView_Left"
         android:layout_width="wrap_content"
         android:layout_height="200dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginLeft="24dp"
-        android:layout_marginStart="24dp"
         android:layout_gravity="bottom|start"
-        custom:JV_autoReCenterButton="false"
+        android:layout_marginStart="24dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginBottom="8dp"
+        custom:JV_autoReCenterButton="true"
         custom:JV_backgroundColor="@color/colorJoystickBackGround"
         custom:JV_backgroundSizeRatio="80%"
         custom:JV_borderColor="@color/colorJoystickBorder"
         custom:JV_borderWidth="4dp"
         custom:JV_buttonColor="@color/colorJoystickButton"
-        custom:JV_buttonSizeRatio="15%" />
+        custom:JV_buttonDirection="both"
+        custom:JV_buttonSizeRatio="10%" />
 
-    <ToggleButton
-        android:id="@+id/button_toggle_cut"
+    <Switch
+        android:id="@+id/button_switch_cut"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:layout_marginEnd="24dp"
-        android:layout_marginRight="24dp"
         android:layout_gravity="bottom|end"
-        android:textOff="@string/button_toggle_off"
-        android:textOn="@string/button_toggle_on" />
-
-    <Button
-        android:id="@+id/button_reset_joy"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:layout_marginLeft="24dp"
-        android:layout_marginStart="24dp"
-        android:layout_gravity="bottom|center"
-        android:text="@string/button_reset"/>
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="20dp"
+        android:text="@string/button_switch_cut"
+        android:textColor="#ffffff"
+        android:textSize="18sp"
+        tools:checked="false" />
 
 </FrameLayout>

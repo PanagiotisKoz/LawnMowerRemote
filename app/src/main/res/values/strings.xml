@@ -6,16 +6,17 @@
 
     <!-- Strings related to MainApp -->
 
-    <string name="button_reset">Reset</string>>
-    <string name="button_toggle_on">Cutting</string>
-    <string name="button_toggle_off">Not cutting</string>
+    <string name="button_switch_cut">Cut</string>
 
     <string name="msg_wifi_not_connected">This app requires wi-fi connection.
                                           Please connect to an access point before it is used.</string>
     <string name="msg_wifi_connected">Wifi connected. The app is ready to use.</string>
-    <string name="msg_server_not_found">Server is not found, on ip or port configured on settings.\n
+    <string name="msg_server_not_found">Server is not found, on IP:port configured on settings.\n
                                         Make sure that ip and port you have entered are correctly and
                                         host server is running.</string>
+    <string name="msg_wrong_wifi_port">Something wrong with port number.\n
+                                        We force to use 8080.</string>
+
 
     <string name="msg_box_ok">OK</string>
 
@@ -23,7 +24,7 @@
 
     <!-- Strings ralated to ip address settings -->
     <string name="pref_title_ip">Lawn mower IP address</string>
-    <string name="pref_default_ip_value">127.0.0.1</string>
+    <string name="pref_default_ip_value">lawnmower.local</string>
     <string name="pref_text_ip_digits">0123456789.</string>
     <string name="toast_text_wrong_ip">Please enter a valid ip address /nExample: 127.0.0.1</string>
 
