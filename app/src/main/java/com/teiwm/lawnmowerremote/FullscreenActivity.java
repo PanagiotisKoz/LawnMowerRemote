@@ -23,6 +23,8 @@ import android.content.Intent;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.ScrollView;
 import android.widget.Toast;
 import io.github.controlwear.virtual.joystick.android.JoystickView;
 
@@ -61,6 +63,8 @@ public class FullscreenActivity extends AppCompatActivity {
     private static final int UI_ANIMATION_DELAY = 300;
 
     private View mContentView;
+    private TextView m_infoView;
+    private ScrollView m_infoScroll;
     private boolean mVisible;
 
     @Override
@@ -71,7 +75,6 @@ public class FullscreenActivity extends AppCompatActivity {
 
         mVisible = true;
         mContentView = findViewById(R.id.fullscreen_content);
-
 
         // Set up the user interaction to manually show or hide the system UI.
         mContentView.setOnClickListener(new View.OnClickListener() {
@@ -227,7 +230,8 @@ public class FullscreenActivity extends AppCompatActivity {
     }
 
     protected void Initialize() {
-
+        m_infoView = findViewById(R.id.infoView);
+        m_infoScroll = findViewById(R.id.infoScroll);
         m_jstck_move_vihicle = findViewById(R.id.joystickView_Left);
         m_jstck_move_vihicle.setOnMoveListener(new JoystickView.OnMoveListener()
         {
@@ -275,7 +279,6 @@ public class FullscreenActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
         SharedPreferences sharedPref = getSharedPreferences(getPackageName() + "_preferences", MODE_PRIVATE);
 
         // TODO: Add functionality to read settings value for enabling video feed.

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="resolutionsArray">
+        <item>1920*1080</item>
+        <item>1080*720</item>
+        <item>720*440</item>
+    </string-array>
+    <string-array name="resolutionsValue">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+</resources>

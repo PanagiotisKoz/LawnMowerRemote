@@ -39,6 +39,8 @@
     <string name="pref_title_video">View remote video feed</string>
     <string name="pref_title_video_summary">Enable or disable remote video feed,
                                             from Raspberry pi camera.</string>
+    <string name="pref_title_video_resolution">Select resolution</string>
+    <string name="pref_title_video_resolution_summary">Select remote video feed resolution.</string>
 
     <!-- Strings ralated to controls settings -->
     <string name="pref_title_mirror_controls">Mirror controls</string>

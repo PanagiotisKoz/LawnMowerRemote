@@ -27,14 +27,21 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="Video feed"
-        android:key="videofeed_category">
+        android:title="Mower Settings"
+        android:key="mower_category">
 
-        <SwitchPreference
-            android:defaultValue="false"
-            android:key="key_settings_video"
-            android:title="@string/pref_title_video"
-            android:summary="@string/pref_title_video_summary"/>
+            <SwitchPreference
+                android:defaultValue="false"
+                android:key="key_settings_video"
+                android:title="@string/pref_title_video"
+                android:summary="@string/pref_title_video_summary"/>
+            <ListPreference
+                android:title="@string/pref_title_video_resolution"
+                android:summary="@string/pref_title_video_resolution_summary"
+                android:key="key_settings_size"
+                android:entries="@array/resolutionsArray"
+                android:entryValues="@array/resolutionsValue"
+                android:defaultValue="1"/>
     </PreferenceCategory>
 
     <PreferenceCategory
