@@ -1,24 +1,18 @@
 package com.teiwm.lawnmowerremote;
 
-
-import android.util.Log;
-
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import android.util.Log;
 
 import static android.content.ContentValues.TAG;
 
 public class TCPClient {
-
+    private static String LOG_TAG = "RPI TCP client - ";
     private boolean receiveThreadRunning = false;
-    private String m_LastError = "";
 
     private Socket mConnectionSocket;
 
@@ -34,7 +28,6 @@ public class TCPClient {
     private byte[] mRecievemsg = new byte[32];
 
 
-
     /**
      * Returns true if TCPClient is connected, else false
      * @return Boolean
@@ -46,7 +39,7 @@ public class TCPClient {
     /**
      * Open connection to server
      */
-    public void Connect(String ip, int port) {
+    public void Connect( String ip, int port ) {
         mSeverIp = ip;
         mServerPort = port;
         new Thread(new ConnectRunnable()).start();
@@ -60,7 +53,9 @@ public class TCPClient {
 
         try {
             mConnectionSocket.close();
-        } catch (IOException e) { }
+        } catch (IOException e) {
+            Log.d ( LOG_TAG, e.getMessage() );
+        }
 
     }
 
@@ -71,7 +66,7 @@ public class TCPClient {
      * Send data to server
      * @param data byte array to send
      */
-    public void WriteData(byte[] data) {
+    public void WriteData( byte[] data ) {
         if (isConnected()) {
             startSending();
             mSendRunnable.Send(data);
@@ -79,22 +74,22 @@ public class TCPClient {
     }
 
     private void stopThreads() {
-        if (mReceiveThread != null)
+        if ( mReceiveThread != null )
             mReceiveThread.interrupt();
 
-        if (mSendThread != null)
+        if ( mSendThread != null )
             mSendThread.interrupt();
     }
 
     private void startSending() {
-        mSendRunnable = new SendRunnable(mConnectionSocket);
-        mSendThread = new Thread(mSendRunnable);
+        mSendRunnable = new SendRunnable( mConnectionSocket );
+        mSendThread = new Thread( mSendRunnable );
         mSendThread.start();
     }
 
     private void startReceiving() {
-        ReceiveRunnable mReceiveRunnable = new ReceiveRunnable(mConnectionSocket);
-        mReceiveThread = new Thread(mReceiveRunnable);
+        ReceiveRunnable mReceiveRunnable = new ReceiveRunnable( mConnectionSocket );
+        mReceiveThread = new Thread( mReceiveRunnable );
         mReceiveThread.start();
     }
 
@@ -102,26 +97,28 @@ public class TCPClient {
         private Socket sock;
         private InputStream input;
 
-        public ReceiveRunnable(Socket server) {
+        public ReceiveRunnable( Socket server ) {
             sock = server;
             try {
                 input = sock.getInputStream();
-            } catch (Exception e) { }
+            } catch ( Exception e ) {
+                Log.d ( LOG_TAG, e.getMessage() );
+            }
         }
 
         @Override
         public void run() {
             while (!Thread.currentThread().isInterrupted() && isConnected()) {
-                if (!receiveThreadRunning)
+                if ( !receiveThreadRunning )
                     receiveThreadRunning = true;
 
                 try {
                     //Read the first integer, it defines the length of the data to expect
-                    input.read(mRecievemsg,0,mRecievemsg.length);
+                    input.read( mRecievemsg,0, mRecievemsg.length );
 
                     //Stop listening so we don't have e thread using up CPU-cycles when we're not expecting data
                     stopThreads();
-                } catch (Exception e) {
+                } catch ( Exception e ) {
                     Disconnect(); //Gets stuck in a loop if we don't call this on error!
                 }
             }
@@ -137,16 +134,17 @@ public class TCPClient {
         private boolean hasMessage = false;
         int dataType = 1;
 
-        public SendRunnable(Socket server) {
+        public SendRunnable( Socket server ) {
             try {
                 this.out = server.getOutputStream();
-            } catch (IOException e) {
+            } catch ( IOException e ) {
+                Log.d ( LOG_TAG, e.getMessage() );
             }
         }
 
         /**
          * Send data as bytes to the server
-         * @param bytes
+         * @param bytes data to send.
          */
         public void Send(byte[] bytes) {
             this.data = bytes;
@@ -155,41 +153,41 @@ public class TCPClient {
 
         @Override
         public void run() {
-            while (!Thread.currentThread().isInterrupted() && isConnected()) {
-                if (this.hasMessage) {
+            while ( !Thread.currentThread().isInterrupted() && isConnected() ) {
+                if ( this.hasMessage ) {
                     try {
-                        this.out.write(data, 0, data.length);
+                        this.out.write( data, 0, data.length );
                         //Flush the stream to be sure all bytes has been written out
                         this.out.flush();
-                    } catch (IOException e) { }
+                    } catch ( IOException e ) {
+                        Log.d ( LOG_TAG, e.getMessage() );
+                    }
                     this.hasMessage = false;
                     this.data =  null;
 
-                    if (!receiveThreadRunning)
+                    if ( !receiveThreadRunning )
                         startReceiving(); //Start the receiving thread if it's not already running
                 }
             }
         }
     }
 
-    public String GetLastError() {
-        return m_LastError;
-    }
     public class ConnectRunnable implements Runnable {
 
         public void run() {
             try {
-                InetAddress serverAddr = InetAddress.getByName(mSeverIp);
+                InetAddress serverAddr = InetAddress.getByName( mSeverIp );
                 //Create a new instance of Socket
                 mConnectionSocket = new Socket();
 
                 //Start connecting to the server with 5000ms timeout
                 //This will block the thread until a connection is established
-                mConnectionSocket.connect(new InetSocketAddress(serverAddr, mServerPort), 5000);
+                mConnectionSocket.connect( new InetSocketAddress(serverAddr, mServerPort ), 5000);
 
 
-            } catch (Exception e) {
-                m_LastError = e.getMessage();
+            } catch ( Exception e ) {
+                System.out.println(  );
+                Log.d( LOG_TAG, e.getMessage() );
             }
         }
     }

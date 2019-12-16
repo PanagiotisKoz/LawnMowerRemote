@@ -10,6 +10,8 @@
 
     <string name="msg_wifi_not_connected">This app requires wi-fi connection.
                                           Please connect to an access point before it is used.</string>
+    <string name="msg_client_cant_connect">Cannot connect to lawn mower.
+                                          Please check that ip and port is right.</string>
     <string name="msg_wifi_connected">Wifi connected. The app is ready to use.</string>
     <string name="msg_server_not_found">Server is not found, on IP:port configured on settings.\n
                                         Make sure that ip and port you have entered are correctly and
