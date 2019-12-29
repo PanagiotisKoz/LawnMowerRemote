@@ -6,14 +6,43 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.Arrays;
+
 import android.util.Log;
 
 import static android.content.ContentValues.TAG;
 
 public class TCPClient {
+    /**
+     * Interface definition for a callback to be invoked when
+     * connection established.
+     */
+    public interface OnConnectListener {
+
+        /**
+         * Called when a connection established.
+         * @param error in case of error description added,
+         * else empty.
+         */
+        void onConnect( String error );
+    }
+
+    /**
+     * Interface definition for a callback to be invoked when
+     * connection disconnected.
+     */
+    public interface OnDisconnectListener {
+        /**
+         * Called when a connection lost or disconnected.
+         * @param error in case of error description added,
+         * else empty.
+         */
+        void onDisconnect( String error );
+    }
+
     private static String LOG_TAG = "RPI TCP client - ";
     private boolean receiveThreadRunning = false;
-
+    private byte[] mLastData = new byte[32];
     private Socket mConnectionSocket;
 
     //Runnables for sending and receiving data
@@ -26,7 +55,24 @@ public class TCPClient {
     private int mServerPort = 0;
 
     private byte[] mRecievemsg = new byte[32];
+    private OnConnectListener mOnConnect;
+    private OnDisconnectListener mOnDisconnect;
 
+    /**
+     * Register a callback to be invoked when connection established.
+     * @param listener The callback that will run
+     */
+    public void setOnConnectListener(OnConnectListener listener) {
+        mOnConnect = listener;
+    }
+
+    /**
+     * Register a callback to be invoked when connection established.
+     * @param listener The callback that will run
+     */
+    public void setOnDisconnectListener(OnDisconnectListener listener) {
+        mOnDisconnect = listener;
+    }
 
     /**
      * Returns true if TCPClient is connected, else false
@@ -52,9 +98,16 @@ public class TCPClient {
         stopThreads();
 
         try {
-            mConnectionSocket.close();
+            if ( !mConnectionSocket.isClosed() )
+                mConnectionSocket.close();
+            if( mOnDisconnect != null ){
+                mOnDisconnect.onDisconnect( "" );
+            }
         } catch (IOException e) {
-            Log.d ( LOG_TAG, e.getMessage() );
+            if( mOnDisconnect != null ){
+                mOnDisconnect.onDisconnect( e.getMessage() );
+            }
+            Log.e ( LOG_TAG, e.getMessage() );
         }
 
     }
@@ -67,9 +120,18 @@ public class TCPClient {
      * @param data byte array to send
      */
     public void WriteData( byte[] data ) {
-        if (isConnected()) {
+        if ( Arrays.equals( data, mLastData ) )
+            return;
+
+        if ( isConnected() ) {
             startSending();
             mSendRunnable.Send(data);
+            mLastData = data;
+        }
+        else {
+            if( mOnDisconnect != null ){
+                mOnDisconnect.onDisconnect( "Connection lost." );
+            }
         }
     }
 
@@ -102,7 +164,7 @@ public class TCPClient {
             try {
                 input = sock.getInputStream();
             } catch ( Exception e ) {
-                Log.d ( LOG_TAG, e.getMessage() );
+                Log.e ( LOG_TAG, e.getMessage() );
             }
         }
 
@@ -119,6 +181,9 @@ public class TCPClient {
                     //Stop listening so we don't have e thread using up CPU-cycles when we're not expecting data
                     stopThreads();
                 } catch ( Exception e ) {
+                    if( mOnDisconnect != null ){
+                        mOnDisconnect.onDisconnect( e.getMessage() );
+                    }
                     Disconnect(); //Gets stuck in a loop if we don't call this on error!
                 }
             }
@@ -138,7 +203,7 @@ public class TCPClient {
             try {
                 this.out = server.getOutputStream();
             } catch ( IOException e ) {
-                Log.d ( LOG_TAG, e.getMessage() );
+                Log.e ( LOG_TAG, e.getMessage() );
             }
         }
 
@@ -160,7 +225,7 @@ public class TCPClient {
                         //Flush the stream to be sure all bytes has been written out
                         this.out.flush();
                     } catch ( IOException e ) {
-                        Log.d ( LOG_TAG, e.getMessage() );
+                        Log.e ( LOG_TAG, e.getMessage() );
                     }
                     this.hasMessage = false;
                     this.data =  null;
@@ -180,14 +245,17 @@ public class TCPClient {
                 //Create a new instance of Socket
                 mConnectionSocket = new Socket();
 
-                //Start connecting to the server with 5000ms timeout
+                //Start connecting to the server with 2000ms timeout
                 //This will block the thread until a connection is established
-                mConnectionSocket.connect( new InetSocketAddress(serverAddr, mServerPort ), 5000);
-
-
+                mConnectionSocket.connect( new InetSocketAddress(serverAddr, mServerPort ), 2000);
+                if( mOnConnect != null ){
+                    mOnConnect.onConnect("" );
+                }
             } catch ( Exception e ) {
-                System.out.println(  );
-                Log.d( LOG_TAG, e.getMessage() );
+                if( mOnConnect != null ){
+                    mOnConnect.onConnect( e.getMessage() );
+                }
+                Log.e( LOG_TAG, e.getMessage() );
             }
         }
     }

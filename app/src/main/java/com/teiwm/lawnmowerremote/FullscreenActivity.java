@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
+import android.os.Looper;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -33,15 +35,7 @@ import io.github.controlwear.virtual.joystick.android.JoystickView;
  * status bar and navigation/system bar) with user interaction.
  */
 public class FullscreenActivity extends AppCompatActivity {
-    private Lawn_protocol m_RPi_client;
-    private boolean m_connected = false; // If the app is connected to RPi server then true.
-    private byte m_move_dir;
-    private int m_joy_strength = 0;
-    private boolean m_cutting_active = false;
-    private BroadcastReceiver m_ConnectivityReceiver = null;
-
-    private Switch m_btn_switch_cut = null;
-    private JoystickView m_jstck_move_vihicle = null;
+    private TCPClient m_client = new TCPClient();
 
     /**
      * Whether or not the system UI should be auto-hidden after
@@ -62,9 +56,71 @@ public class FullscreenActivity extends AppCompatActivity {
     private static final int UI_ANIMATION_DELAY = 300;
 
     private View mContentView;
-    private TextView m_infoView;
+
     private ScrollView m_infoScroll;
-    private boolean mVisible;
+    private Switch m_btn_switch_cut;
+    private JoystickView m_jstck_move_vihicle;
+
+    private ActionBar m_ActionBar;
+    private TextView m_infoView;
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
+    private BroadcastReceiver m_WifiStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive( Context context, Intent intent ) {
+            int WifiStateExtra = intent.getIntExtra( WifiManager.EXTRA_WIFI_STATE,
+                    WifiManager.WIFI_STATE_UNKNOWN );
+
+            SharedPreferences shared_pref = getSharedPreferences(getPackageName() +
+                    "_preferences", MODE_PRIVATE );
+
+            switch ( WifiStateExtra ) {
+                case WifiManager.WIFI_STATE_ENABLED:
+                    final ConnectivityManager cm =
+                            (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+                    final String ip = shared_pref.getString("key_settings_ip",
+                            "@string/pref_default_ip_value");
+                    int port;
+                    try {
+                        port = Integer.parseInt(shared_pref.getString("key_settings_port",
+                                "@string/pref_default_port_value"));
+                    } catch (NumberFormatException nfe) {
+                        ShowToast(getString(R.string.msg_wrong_wifi_port));
+                        port = 8080;
+                    }
+
+                    final int final_port = port;
+                    // Need to wait a bit for the SSID to get picked up;
+                    // if done immediately all we'll get is null
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+                            boolean isConnected = activeNetwork != null &&
+                                    activeNetwork.isConnectedOrConnecting();
+                            if ( isConnected ) {
+                                m_client.Connect(ip, final_port);
+                            }
+                            else
+                                ShowMessageBox( getString( R.string.msg_wifi_not_connected ) );
+                        }
+                    }, 10000);
+                    break;
+                case WifiManager.WIFI_STATE_DISABLED:
+                    ShowMessageBox( getString( R.string.msg_wifi_not_connected ) );
+                    break;
+                case WifiManager.WIFI_STATE_DISABLING:
+                    if ( m_client.isConnected() )
+                        m_client.Disconnect();
+                    break;
+            }
+        }
+    };
 
     @Override
     protected void onCreate( Bundle savedInstanceState ) {
@@ -72,9 +128,7 @@ public class FullscreenActivity extends AppCompatActivity {
 
         setContentView( R.layout.activity_fullscreen );
 
-        mVisible = true;
         mContentView = findViewById( R.id.fullscreen_content );
-
         // Set up the user interaction to manually show or hide the system UI.
         mContentView.setOnClickListener( new View.OnClickListener() {
             @Override
@@ -83,7 +137,12 @@ public class FullscreenActivity extends AppCompatActivity {
             }
         });
 
-        Initialize();
+        m_infoScroll = findViewById( R.id.infoScroll );
+        m_btn_switch_cut = findViewById(R.id.button_switch_cut);
+        m_jstck_move_vihicle = findViewById( R.id.joystickView_Left );
+
+        m_ActionBar = getSupportActionBar();
+        m_infoView = findViewById( R.id.infoView );
     }
 
     @Override
@@ -94,6 +153,87 @@ public class FullscreenActivity extends AppCompatActivity {
         // created, to briefly hint to the user that UI controls
         // are available.
         delayedHide( 100 );
+    }
+
+    public void Post_Toast(final String message) {
+        Handler handler = new Handler(Looper.getMainLooper());
+
+        handler.post(new Runnable() {
+
+            @Override
+            public void run() {
+                ShowToast( message );
+            }
+        });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        m_jstck_move_vihicle.setOnMoveListener(new JoystickView.OnMoveListener()
+        {
+            public void onMove( int angle, int strength ) {
+
+                String move_dir = getString( R.string.move_cmd_forward );
+
+                if ( angle >= 337 || angle <= 22 )
+                    move_dir = getString( R.string.move_cmd_right );
+                if ( angle > 22 && angle <= 67 )
+                    move_dir = getString( R.string.move_cmd_fr );
+                if ( angle > 67 && angle <= 112 )
+                    move_dir = getString( R.string.move_cmd_forward );
+                if ( angle > 112 && angle <= 157 )
+                    move_dir = getString( R.string.move_cmd_fl );
+                if ( angle > 157 && angle <= 202 )
+                    move_dir = getString( R.string.move_cmd_left );
+                if ( angle > 202 && angle <= 247 )
+                    move_dir = getString( R.string.move_cmd_bl );
+                if ( angle > 247 && angle <= 292 )
+                    move_dir = getString( R.string.move_cmd_backward );
+                if ( angle > 292 && angle <= 337 )
+                    move_dir = getString( R.string.move_cmd_br );
+
+                String data =  move_dir;
+                data += Byte.toString( ( byte ) strength );
+                m_client.WriteData( data.getBytes() );
+            }
+        }, 500);
+
+        m_client.setOnConnectListener( new TCPClient.OnConnectListener() {
+            @Override
+            public void onConnect(String error) {
+                if ( error.isEmpty() ) {
+                    SetEnableControls(true); //  Enable controls when raspberry found.
+                    Post_Toast( getString(R.string.msg_client_connected) );
+                }
+                else {
+                    SetEnableControls(false); // Disable controls when raspberry not found.
+                    Post_Toast( error );
+                }
+            }
+        });
+
+        m_client.setOnDisconnectListener(new TCPClient.OnDisconnectListener() {
+            @Override
+            public void onDisconnect(String error) {
+                SetEnableControls(false); // Disable controls when raspberry not found.
+
+                if ( error.isEmpty() ) {
+                    Post_Toast(getString(R.string.msg_server_disconnected));
+                }
+                else
+                    Post_Toast( error );
+            }
+        });
+
+        m_btn_switch_cut.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ) {
+                String data =  getString( R.string.property_blade_run );
+                data += Boolean.toString( ( Boolean ) isChecked );
+                m_client.WriteData( data.getBytes() );
+            }
+        });
     }
 
     /**
@@ -121,7 +261,7 @@ public class FullscreenActivity extends AppCompatActivity {
     };
 
     private void toggle() {
-        if ( mVisible ) {
+        if ( m_ActionBar.isShowing() ) {
             hide();
         } else {
             show();
@@ -130,11 +270,9 @@ public class FullscreenActivity extends AppCompatActivity {
 
     private void hide() {
         // Hide UI first
-        ActionBar actionBar = getSupportActionBar();
-        if ( actionBar != null ) {
-            actionBar.hide();
+        if ( m_ActionBar != null ) {
+            m_ActionBar.hide();
         }
-        mVisible = false;
 
         // Schedule a runnable to remove the status and navigation bar after a delay
         mHideHandler.removeCallbacks( mShowPart2Runnable );
@@ -164,7 +302,6 @@ public class FullscreenActivity extends AppCompatActivity {
         // Show the system bar
         mContentView.setSystemUiVisibility( View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION );
-        mVisible = true;
 
         // Schedule a runnable to display UI elements after a delay
         mHideHandler.removeCallbacks( mHidePart2Runnable );
@@ -217,98 +354,22 @@ public class FullscreenActivity extends AppCompatActivity {
         return super.onOptionsItemSelected( item );
     }
 
-    protected boolean CheckWifiState() {
-        NetworkInfo net_info;
-        ConnectivityManager connManager = ( ConnectivityManager ) getSystemService( Context.CONNECTIVITY_SERVICE );
-        net_info = connManager.getActiveNetworkInfo();
-
-        if ( net_info != null )
-            return net_info.getType() == ConnectivityManager.TYPE_WIFI;
-
-        return false;
-    }
-
-    protected void Initialize() {
-        m_infoView = findViewById( R.id.infoView );
-        m_infoScroll = findViewById( R.id.infoScroll );
-        m_jstck_move_vihicle = findViewById( R.id.joystickView_Left );
-        m_jstck_move_vihicle.setOnMoveListener(new JoystickView.OnMoveListener()
-        {
-            public void onMove( int angle, int strength ) {
-
-                m_joy_strength = strength;
-
-                /*if ( angle >= 337 || angle <= 22 )
-                    m_move_dir = Lawn_protocol.cmd_move.right;
-                if ( angle > 22 || angle <= 67 )
-                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_fr;
-                if ( angle > 67 && angle <= 112 )
-                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_forward;
-                if ( angle > 112 && angle <= 157 )
-                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_fl;
-                if ( angle > 157 && angle <= 202 )
-                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_left;
-                if ( angle > 202 && angle <= 247 )
-                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_bl;
-                if ( angle > 247 && angle <= 292 )
-                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_backward;
-                if ( angle > 292 && angle <= 337 )
-                    m_move_dir = Lawn_protocol.cmd_move.cmd_move_br;*/
-                //TODO: send commands through Lawn_protocol.
-            }
-        });
-
-        m_btn_switch_cut =  findViewById(R.id.button_switch_cut);
-        m_btn_switch_cut.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ) {
-                m_cutting_active = isChecked;
-            }
-        });
-
-        m_ConnectivityReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive( Context context, Intent intent ) {
-                CheckWifiState();
-            }
-        };
-        this.registerReceiver( this.m_ConnectivityReceiver,
-                new IntentFilter( ConnectivityManager.CONNECTIVITY_ACTION ) );
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
-        SharedPreferences sharedPref = getSharedPreferences(getPackageName() + "_preferences", MODE_PRIVATE );
+
+        IntentFilter intentFilter = new IntentFilter( WifiManager.WIFI_STATE_CHANGED_ACTION );
+        registerReceiver( m_WifiStateReceiver, intentFilter);
 
         // TODO: Add functionality to read settings value for enabling video feed.
-
-        if ( CheckWifiState() ) {
-            ShowToast(getString(R.string.msg_wifi_connected));
-
-            String ip = sharedPref.getString("key_settings_ip", "@string/pref_default_ip_value");
-            int port;
-            try {
-                port = Integer.parseInt( sharedPref.getString("key_settings_port", "@string/pref_default_port_value") );
-            } catch (NumberFormatException nfe) {
-                ShowToast(getString( R.string.msg_wrong_wifi_port ));
-                port = 8080;
-            }
-            if ( m_RPi_client.Start(ip, port) )
-                m_connected = true;
-            else
-                ShowToast( getString(R.string.msg_client_cant_connect) );
-
-        }
-        else {
-            ShowToast( getString( R.string.msg_wifi_not_connected ) );
-        }
-
 
         FrameLayout.LayoutParams joystickparams = (FrameLayout.LayoutParams) m_jstck_move_vihicle.getLayoutParams();
         FrameLayout.LayoutParams togglebtnparams = (FrameLayout.LayoutParams) m_btn_switch_cut.getLayoutParams();
 
+        SharedPreferences shared_pref = getSharedPreferences(getPackageName() +
+                "_preferences", MODE_PRIVATE );
 
-        if ( sharedPref.getBoolean("key_settings_mirror_controls", false) ) {
+        if ( shared_pref.getBoolean("key_settings_mirror_controls", false) ) {
             joystickparams.gravity = ( Gravity.BOTTOM | Gravity.END );
             togglebtnparams.gravity = ( Gravity.BOTTOM | Gravity.START );
         } else {
@@ -318,27 +379,19 @@ public class FullscreenActivity extends AppCompatActivity {
 
         m_jstck_move_vihicle.setLayoutParams( joystickparams );
         m_btn_switch_cut.setLayoutParams( togglebtnparams );
-
-        if ( !m_connected ) {
-            SetEnableControls(false); // Disable controls when raspberry not found.
-            ShowMessageBox( getString(R.string.msg_server_not_found) );
-        }
-        else {
-            SetEnableControls(true ); //  Enable controls when raspberry found.
-        }
-
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        unregisterReceiver(m_WifiStateReceiver);
     }
 
     @Override
     protected void onDestroy() {
-        this.unregisterReceiver( m_ConnectivityReceiver );
-        if ( m_connected )
-            m_RPi_client.Stop();
+        if ( m_client.isConnected() )
+            m_client.Disconnect();
+
         super.onDestroy();
     }
 
