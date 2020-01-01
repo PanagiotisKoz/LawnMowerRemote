@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.Vector;
 
 import android.util.Log;
 
@@ -42,7 +43,7 @@ public class TCPClient {
 
     private static String LOG_TAG = "RPI TCP client - ";
     private boolean receiveThreadRunning = false;
-    private byte[] mLastData = new byte[32];
+    private byte[] mLastData;
     private Socket mConnectionSocket;
 
     //Runnables for sending and receiving data
@@ -54,7 +55,7 @@ public class TCPClient {
     private String mSeverIp =   "0.0.0.0";
     private int mServerPort = 0;
 
-    private byte[] mRecievemsg = new byte[32];
+    private byte[] mRecievemsg;
     private OnConnectListener mOnConnect;
     private OnDisconnectListener mOnDisconnect;
 
@@ -120,12 +121,18 @@ public class TCPClient {
      * @param data byte array to send
      */
     public void WriteData( byte[] data ) {
-        if ( Arrays.equals( data, mLastData ) )
+        if ( Arrays.equals( mLastData, data ) )
             return;
 
         if ( isConnected() ) {
             startSending();
-            mSendRunnable.Send(data);
+            byte[] tmp = new byte[ data.length + 1 ];
+
+            if (BuildConfig.DEBUG && !( data.length > 255 )) { throw new AssertionError(); }
+
+            tmp[0] = ( byte ) data.length;
+            System.arraycopy( data, 0, tmp, 1, data.length );
+            mSendRunnable.Send( tmp );
             mLastData = data;
         }
         else {
@@ -175,8 +182,10 @@ public class TCPClient {
                     receiveThreadRunning = true;
 
                 try {
+                    byte[] packet_size = new byte[1];
+                    input.read( packet_size, 0, 1 );
                     //Read the first integer, it defines the length of the data to expect
-                    input.read( mRecievemsg,0, mRecievemsg.length );
+                    input.read( mRecievemsg,0, packet_size[0] );
 
                     //Stop listening so we don't have e thread using up CPU-cycles when we're not expecting data
                     stopThreads();
@@ -209,10 +218,10 @@ public class TCPClient {
 
         /**
          * Send data as bytes to the server
-         * @param bytes data to send.
+         * @param data data to send.
          */
-        public void Send(byte[] bytes) {
-            this.data = bytes;
+        public void Send( byte[] data ) {
+            this.data = data;
             this.hasMessage = true;
         }
 
@@ -247,7 +256,9 @@ public class TCPClient {
 
                 //Start connecting to the server with 2000ms timeout
                 //This will block the thread until a connection is established
-                mConnectionSocket.connect( new InetSocketAddress(serverAddr, mServerPort ), 2000);
+                if ( !isConnected() )
+                    mConnectionSocket.connect( new InetSocketAddress(serverAddr, mServerPort ),
+                                            2000);
                 if( mOnConnect != null ){
                     mOnConnect.onConnect("" );
                 }

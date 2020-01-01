@@ -89,6 +89,9 @@ public class FullscreenActivity extends AppCompatActivity {
                     try {
                         port = Integer.parseInt(shared_pref.getString("key_settings_port",
                                 "@string/pref_default_port_value"));
+                        if ( port == 0 )
+                            port = 8080;
+
                     } catch (NumberFormatException nfe) {
                         ShowToast(getString(R.string.msg_wrong_wifi_port));
                         port = 8080;
@@ -143,6 +146,7 @@ public class FullscreenActivity extends AppCompatActivity {
 
         m_ActionBar = getSupportActionBar();
         m_infoView = findViewById( R.id.infoView );
+        SetEnableControls(false);
     }
 
     @Override
@@ -156,10 +160,7 @@ public class FullscreenActivity extends AppCompatActivity {
     }
 
     public void Post_Toast(final String message) {
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        handler.post(new Runnable() {
-
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 ShowToast( message );
@@ -230,7 +231,7 @@ public class FullscreenActivity extends AppCompatActivity {
         m_btn_switch_cut.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ) {
                 String data =  getString( R.string.property_blade_run );
-                data += Boolean.toString( ( Boolean ) isChecked );
+                data += Boolean.toString( isChecked );
                 m_client.WriteData( data.getBytes() );
             }
         });
@@ -395,15 +396,19 @@ public class FullscreenActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    private void SetEnableControls(boolean state) {
-        if (state) {
-            m_btn_switch_cut.setEnabled( true );
-            m_jstck_move_vihicle.setEnabled( true );
-        }
-        else {
-            m_btn_switch_cut.setEnabled( false );
-            m_jstck_move_vihicle.setEnabled( false );
-        }
+    private void SetEnableControls(final boolean state) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if ( state ) {
+                    m_btn_switch_cut.setEnabled(true);
+                    m_jstck_move_vihicle.setEnabled(true);
+                } else {
+                    m_btn_switch_cut.setEnabled(false);
+                    m_jstck_move_vihicle.setEnabled(false);
+                }
+            }
+        });
     }
 
     private void ShowToast( String str ) {
