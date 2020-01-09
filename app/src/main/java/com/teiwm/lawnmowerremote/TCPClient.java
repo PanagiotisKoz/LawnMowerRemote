@@ -1,49 +1,18 @@
 package com.teiwm.lawnmowerremote;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.Arrays;
-import java.util.Vector;
 
 import android.util.Log;
 
-import static android.content.ContentValues.TAG;
-
 public class TCPClient {
-    /**
-     * Interface definition for a callback to be invoked when
-     * connection established.
-     */
-    public interface OnConnectListener {
-
-        /**
-         * Called when a connection established.
-         * @param error in case of error description added,
-         * else empty.
-         */
-        void onConnect( String error );
-    }
-
-    /**
-     * Interface definition for a callback to be invoked when
-     * connection disconnected.
-     */
-    public interface OnDisconnectListener {
-        /**
-         * Called when a connection lost or disconnected.
-         * @param error in case of error description added,
-         * else empty.
-         */
-        void onDisconnect( String error );
-    }
-
-    private static String LOG_TAG = "RPI TCP client - ";
+    private static String LOG_TAG = "RPI TCP client";
     private boolean receiveThreadRunning = false;
-    private byte[] mLastData;
     private Socket mConnectionSocket;
 
     //Runnables for sending and receiving data
@@ -54,93 +23,6 @@ public class TCPClient {
 
     private String mSeverIp =   "0.0.0.0";
     private int mServerPort = 0;
-
-    private byte[] mRecievemsg;
-    private OnConnectListener mOnConnect;
-    private OnDisconnectListener mOnDisconnect;
-
-    /**
-     * Register a callback to be invoked when connection established.
-     * @param listener The callback that will run
-     */
-    public void setOnConnectListener(OnConnectListener listener) {
-        mOnConnect = listener;
-    }
-
-    /**
-     * Register a callback to be invoked when connection established.
-     * @param listener The callback that will run
-     */
-    public void setOnDisconnectListener(OnDisconnectListener listener) {
-        mOnDisconnect = listener;
-    }
-
-    /**
-     * Returns true if TCPClient is connected, else false
-     * @return Boolean
-     */
-    public boolean isConnected() {
-        return mConnectionSocket != null && mConnectionSocket.isConnected() && !mConnectionSocket.isClosed();
-    }
-
-    /**
-     * Open connection to server
-     */
-    public void Connect( String ip, int port ) {
-        mSeverIp = ip;
-        mServerPort = port;
-        new Thread(new ConnectRunnable()).start();
-    }
-
-    /**
-     * Close connection to server
-     */
-    public void Disconnect() {
-        stopThreads();
-
-        try {
-            if ( !mConnectionSocket.isClosed() )
-                mConnectionSocket.close();
-            if( mOnDisconnect != null ){
-                mOnDisconnect.onDisconnect( "" );
-            }
-        } catch (IOException e) {
-            if( mOnDisconnect != null ){
-                mOnDisconnect.onDisconnect( e.getMessage() );
-            }
-            Log.e ( LOG_TAG, e.getMessage() );
-        }
-
-    }
-
-    public byte[] GetResponce(){
-        return mRecievemsg;
-    }
-    /**
-     * Send data to server
-     * @param data byte array to send
-     */
-    public void WriteData( byte[] data ) {
-        if ( Arrays.equals( mLastData, data ) )
-            return;
-
-        if ( isConnected() ) {
-            startSending();
-            byte[] tmp = new byte[ data.length + 1 ];
-
-            if (BuildConfig.DEBUG && !( data.length > 255 )) { throw new AssertionError(); }
-
-            tmp[0] = ( byte ) data.length;
-            System.arraycopy( data, 0, tmp, 1, data.length );
-            mSendRunnable.Send( tmp );
-            mLastData = data;
-        }
-        else {
-            if( mOnDisconnect != null ){
-                mOnDisconnect.onDisconnect( "Connection lost." );
-            }
-        }
-    }
 
     private void stopThreads() {
         if ( mReceiveThread != null )
@@ -160,6 +42,70 @@ public class TCPClient {
         ReceiveRunnable mReceiveRunnable = new ReceiveRunnable( mConnectionSocket );
         mReceiveThread = new Thread( mReceiveRunnable );
         mReceiveThread.start();
+    }
+
+    public TCPClient(){
+        EventDispatcher.getInstance().addEventListener(
+                Local_event_ids.tcp_event_ids.send.getID(),
+                new IEventHandler() {
+                    @Override
+                    public void callback(Event event) {
+                        if ( isConnected() ) {
+                            startSending();
+                            String data = event.getParams().toString();
+                            mSendRunnable.Send( data.getBytes() );
+                        }
+                    }
+                });
+    }
+
+    public boolean Connect( String ip, int port ){
+        mSeverIp = ip;
+        mServerPort = port;
+
+        try {
+            InetAddress serverAddr = InetAddress.getByName( mSeverIp );
+            //Create a new instance of Socket
+            mConnectionSocket = new Socket();
+
+            //Start connecting to the server with 2000ms timeout
+            //This will block the thread until a connection is established
+            if ( !isConnected() )
+                mConnectionSocket.connect( new InetSocketAddress(serverAddr, mServerPort ),
+                        2000);
+            //EventBus.getDefault().post( new EventData( Local_events.TCP_event.connected ) );
+            startReceiving();
+            return true;
+        } catch ( IOException e ) {
+            Log.e( LOG_TAG, e.getMessage() );
+            return false;
+        }
+    }
+
+    /**
+     * Returns true if TCPClient is connected, else false
+     * @return Boolean
+     */
+    public boolean isConnected() {
+        return mConnectionSocket != null && mConnectionSocket.isConnected() && !mConnectionSocket.isClosed();
+    }
+
+    /**
+     * Close connection to server
+     */
+    public void Disconnect() {
+        stopThreads();
+
+        try {
+            if ( !mConnectionSocket.isClosed() ) {
+                mConnectionSocket.close();
+                //EventBus.getDefault().post( new EventData( Local_events.TCP_event.disconnected ) );
+                //EventBus.getDefault().register(this);
+            }
+        } catch (IOException e) {
+            Log.e ( LOG_TAG, e.getMessage() );
+        }
+
     }
 
     public class ReceiveRunnable implements Runnable {
@@ -183,17 +129,26 @@ public class TCPClient {
 
                 try {
                     byte[] packet_size = new byte[1];
-                    input.read( packet_size, 0, 1 );
-                    //Read the first integer, it defines the length of the data to expect
-                    input.read( mRecievemsg,0, packet_size[0] );
+                    if ( input.read( packet_size, 0, 1 ) > 0 ) {
 
-                    //Stop listening so we don't have e thread using up CPU-cycles when we're not expecting data
-                    stopThreads();
-                } catch ( Exception e ) {
-                    if( mOnDisconnect != null ){
-                        mOnDisconnect.onDisconnect( e.getMessage() );
+                        ByteArrayOutputStream recieved_data = new ByteArrayOutputStream();
+
+                        //Read the first integer, it defines the length of the data to expect
+                        byte[] msg = new byte[packet_size[0]];
+                        if ( input.read(msg, 0, packet_size[0]) > 0 ) {
+                            recieved_data.write(msg, 0, msg.length);
+                            recieved_data.flush();
+
+                            /*EventBus.getDefault().post(
+                                    new EventData( Local_events.TCP_event.receive,
+                                    recieved_data ) );*/
+                        }
                     }
-                    Disconnect(); //Gets stuck in a loop if we don't call this on error!
+
+                } catch ( IOException e ) {
+                    Log.e ( LOG_TAG, e.getMessage() );
+                    if ( isConnected() )
+                        Disconnect(); //Gets stuck in a loop if we don't call this on error!
                 }
             }
             receiveThreadRunning = false;
@@ -213,6 +168,8 @@ public class TCPClient {
                 this.out = server.getOutputStream();
             } catch ( IOException e ) {
                 Log.e ( LOG_TAG, e.getMessage() );
+                if( isConnected() )
+                    Disconnect();
             }
         }
 
@@ -229,12 +186,16 @@ public class TCPClient {
         public void run() {
             while ( !Thread.currentThread().isInterrupted() && isConnected() ) {
                 if ( this.hasMessage ) {
+                    if( receiveThreadRunning )
+                        mReceiveThread.interrupt();
                     try {
                         this.out.write( data, 0, data.length );
                         //Flush the stream to be sure all bytes has been written out
                         this.out.flush();
                     } catch ( IOException e ) {
                         Log.e ( LOG_TAG, e.getMessage() );
+                        if( isConnected() )
+                            Disconnect();
                     }
                     this.hasMessage = false;
                     this.data =  null;
@@ -242,31 +203,6 @@ public class TCPClient {
                     if ( !receiveThreadRunning )
                         startReceiving(); //Start the receiving thread if it's not already running
                 }
-            }
-        }
-    }
-
-    public class ConnectRunnable implements Runnable {
-
-        public void run() {
-            try {
-                InetAddress serverAddr = InetAddress.getByName( mSeverIp );
-                //Create a new instance of Socket
-                mConnectionSocket = new Socket();
-
-                //Start connecting to the server with 2000ms timeout
-                //This will block the thread until a connection is established
-                if ( !isConnected() )
-                    mConnectionSocket.connect( new InetSocketAddress(serverAddr, mServerPort ),
-                                            2000);
-                if( mOnConnect != null ){
-                    mOnConnect.onConnect("" );
-                }
-            } catch ( Exception e ) {
-                if( mOnConnect != null ){
-                    mOnConnect.onConnect( e.getMessage() );
-                }
-                Log.e( LOG_TAG, e.getMessage() );
             }
         }
     }

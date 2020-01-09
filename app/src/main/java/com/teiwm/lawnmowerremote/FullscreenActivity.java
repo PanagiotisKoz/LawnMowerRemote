@@ -9,7 +9,6 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
-import android.os.Looper;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -35,7 +34,9 @@ import io.github.controlwear.virtual.joystick.android.JoystickView;
  * status bar and navigation/system bar) with user interaction.
  */
 public class FullscreenActivity extends AppCompatActivity {
+    private static String LOG_TAG = "RPI client app";
     private TCPClient m_client = new TCPClient();
+    private CommManager m_mower = new CommManager();
 
     /**
      * Whether or not the system UI should be auto-hidden after
@@ -64,55 +65,16 @@ public class FullscreenActivity extends AppCompatActivity {
     private ActionBar m_ActionBar;
     private TextView m_infoView;
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-    }
-
     private BroadcastReceiver m_WifiStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive( Context context, Intent intent ) {
             int WifiStateExtra = intent.getIntExtra( WifiManager.EXTRA_WIFI_STATE,
                     WifiManager.WIFI_STATE_UNKNOWN );
-
-            SharedPreferences shared_pref = getSharedPreferences(getPackageName() +
-                    "_preferences", MODE_PRIVATE );
-
             switch ( WifiStateExtra ) {
                 case WifiManager.WIFI_STATE_ENABLED:
-                    final ConnectivityManager cm =
-                            (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
-
-                    final String ip = shared_pref.getString("key_settings_ip",
-                            "@string/pref_default_ip_value");
-                    int port;
-                    try {
-                        port = Integer.parseInt(shared_pref.getString("key_settings_port",
-                                "@string/pref_default_port_value"));
-                        if ( port == 0 )
-                            port = 8080;
-
-                    } catch (NumberFormatException nfe) {
-                        ShowToast(getString(R.string.msg_wrong_wifi_port));
-                        port = 8080;
-                    }
-
-                    final int final_port = port;
-                    // Need to wait a bit for the SSID to get picked up;
-                    // if done immediately all we'll get is null
-                    new Handler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-                            boolean isConnected = activeNetwork != null &&
-                                    activeNetwork.isConnectedOrConnecting();
-                            if ( isConnected ) {
-                                m_client.Connect(ip, final_port);
-                            }
-                            else
-                                ShowMessageBox( getString( R.string.msg_wifi_not_connected ) );
-                        }
-                    }, 10000);
+                    DetectConnectivity ConnectRunnable = new DetectConnectivity();
+                    Thread DetectThread = new Thread( ConnectRunnable );
+                    DetectThread.start();
                     break;
                 case WifiManager.WIFI_STATE_DISABLED:
                     ShowMessageBox( getString( R.string.msg_wifi_not_connected ) );
@@ -124,6 +86,13 @@ public class FullscreenActivity extends AppCompatActivity {
             }
         }
     };
+
+    private boolean isNetworkConnected( ) {
+        ConnectivityManager cm =
+                (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+    }
 
     @Override
     protected void onCreate( Bundle savedInstanceState ) {
@@ -159,7 +128,7 @@ public class FullscreenActivity extends AppCompatActivity {
         delayedHide( 100 );
     }
 
-    public void Post_Toast(final String message) {
+    public void PostToast(final String message) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -175,64 +144,15 @@ public class FullscreenActivity extends AppCompatActivity {
         m_jstck_move_vihicle.setOnMoveListener(new JoystickView.OnMoveListener()
         {
             public void onMove( int angle, int strength ) {
-
-                String move_dir = getString( R.string.move_cmd_forward );
-
-                if ( angle >= 337 || angle <= 22 )
-                    move_dir = getString( R.string.move_cmd_right );
-                if ( angle > 22 && angle <= 67 )
-                    move_dir = getString( R.string.move_cmd_fr );
-                if ( angle > 67 && angle <= 112 )
-                    move_dir = getString( R.string.move_cmd_forward );
-                if ( angle > 112 && angle <= 157 )
-                    move_dir = getString( R.string.move_cmd_fl );
-                if ( angle > 157 && angle <= 202 )
-                    move_dir = getString( R.string.move_cmd_left );
-                if ( angle > 202 && angle <= 247 )
-                    move_dir = getString( R.string.move_cmd_bl );
-                if ( angle > 247 && angle <= 292 )
-                    move_dir = getString( R.string.move_cmd_backward );
-                if ( angle > 292 && angle <= 337 )
-                    move_dir = getString( R.string.move_cmd_br );
-
-                String data =  move_dir;
-                data += Byte.toString( ( byte ) strength );
-                m_client.WriteData( data.getBytes() );
+                if ( !m_jstck_move_vihicle.isEnabled() )
+                    return;
+                m_mower.Move( angle, strength);
             }
-        }, 500);
-
-        m_client.setOnConnectListener( new TCPClient.OnConnectListener() {
-            @Override
-            public void onConnect(String error) {
-                if ( error.isEmpty() ) {
-                    SetEnableControls(true); //  Enable controls when raspberry found.
-                    Post_Toast( getString(R.string.msg_client_connected) );
-                }
-                else {
-                    SetEnableControls(false); // Disable controls when raspberry not found.
-                    Post_Toast( error );
-                }
-            }
-        });
-
-        m_client.setOnDisconnectListener(new TCPClient.OnDisconnectListener() {
-            @Override
-            public void onDisconnect(String error) {
-                SetEnableControls(false); // Disable controls when raspberry not found.
-
-                if ( error.isEmpty() ) {
-                    Post_Toast(getString(R.string.msg_server_disconnected));
-                }
-                else
-                    Post_Toast( error );
-            }
-        });
+        }, 200);
 
         m_btn_switch_cut.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ) {
-                String data =  getString( R.string.property_blade_run );
-                data += Boolean.toString( isChecked );
-                m_client.WriteData( data.getBytes() );
+                m_mower.RunBlade( isChecked );
             }
         });
     }
@@ -385,7 +305,10 @@ public class FullscreenActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+
         unregisterReceiver(m_WifiStateReceiver);
+        if ( m_client.isConnected() )
+            m_client.Disconnect();
     }
 
     @Override
@@ -396,14 +319,15 @@ public class FullscreenActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    private void SetEnableControls(final boolean state) {
+   private void SetEnableControls(final boolean enabled) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if ( state ) {
+                if ( enabled ) {
                     m_btn_switch_cut.setEnabled(true);
                     m_jstck_move_vihicle.setEnabled(true);
                 } else {
+                    m_btn_switch_cut.setChecked( false );
                     m_btn_switch_cut.setEnabled(false);
                     m_jstck_move_vihicle.setEnabled(false);
                 }
@@ -433,6 +357,55 @@ public class FullscreenActivity extends AppCompatActivity {
         dialog.setMessage( str );
         dialog.show();
     }
+
+    public class DetectConnectivity implements Runnable {
+
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        SharedPreferences shared_pref = getSharedPreferences(getPackageName() +
+                "_preferences", MODE_PRIVATE );
+        final String ip = shared_pref.getString("key_settings_ip",
+                "@string/pref_default_ip_value");
+        int port;
+
+        public DetectConnectivity() {
+            try {
+                port = Integer.parseInt(shared_pref.getString("key_settings_port",
+                        "@string/pref_default_port_value"));
+                if (port == 0)
+                    port = 8080;
+
+            } catch (NumberFormatException nfe) {
+                ShowToast(getString(R.string.msg_wrong_wifi_port));
+                port = 8080;
+            }
+        }
+
+        @Override
+        public void run() {
+            boolean connected = false;
+            int tries = 0;
+            while ( !connected && ( tries <= 4 ) ) {
+                if ( isNetworkConnected() ) {
+                    connected =  m_client.Connect( ip, port );
+                }
+                try {
+                    Thread.sleep( 2000 );
+                } catch ( InterruptedException e ) {
+                    e.printStackTrace( System.err );
+                }
+                tries++;
+            }
+            if ( connected ) {
+                SetEnableControls( true );
+            }
+            else {
+                PostToast( getString( R.string.msg_client_cant_connect ) );
+            }
+        }
+    }
+
 
 }
 

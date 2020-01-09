@@ -10,7 +10,11 @@
 
     <string name="msg_wifi_not_connected">This app requires wi-fi connection.
                                           Please connect to an access point before it is used.</string>
+    <string name="msg_client_wrong_server">Protocol not understanding. \n
+                                            Probably connected to wrong server.</string>
     <string name="msg_client_connected">Connected to RPi server.</string>
+    <string name="msg_client_cant_connect">Cannot connect to server.\n
+                                            See system logs for description.</string>
     <string name="msg_server_disconnected">Connection closed.</string>
     <string name="msg_wrong_wifi_port">Something wrong with port number.\n
                                         We force to use 8080.</string>
