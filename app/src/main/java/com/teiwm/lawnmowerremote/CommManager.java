@@ -38,18 +38,18 @@ public class CommManager {
         mLastMoveDir = move_dir;
         mLastMoveStrength = strength;
 
-        String event_data = move_dir + " " + strength;
+        String properties = move_dir + " " + strength;
         Event event = new Event( Local_event_ids.tcp_event_ids.send.getID(),
-                    event_data );
+                properties );
 
         EventDispatcher.getInstance().dispatchEvent( event );
     }
 
     void RunBlade( boolean enable ) {
-        String event_data = Mower_event_ids.general_event_ids.propety_set.getID() + " "
+        String properties = Mower_event_ids.general_event_ids.propety_set.getID() + " "
                 + Mower_event_ids.property_event_ids.blade_run.getID() + " " + enable;
         Event event = new Event( Local_event_ids.tcp_event_ids.send.getID(),
-                event_data );
+                properties );
 
         EventDispatcher.getInstance().dispatchEvent( event );
     }

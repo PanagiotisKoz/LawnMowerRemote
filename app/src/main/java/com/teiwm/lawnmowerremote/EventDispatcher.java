@@ -10,34 +10,34 @@ public class EventDispatcher implements IEventDispatcher {
         return ourInstance;
     }
 
-    protected ArrayList<Listener> listenerList = new ArrayList<>();
+    private ArrayList<Listener> listenerList = new ArrayList<>();
 
     public void addEventListener( int type, IEventHandler handler ) {
         Listener listener = new Listener( type, handler );
-        removeEventListener(type);
-        listenerList.add(0,listener);
+        listenerList.add( listener );
     }
 
     public void removeEventListener( int type ) {
-        for( Listener value : listenerList ) {
-            if( value.getType() == type ){
-                listenerList.remove( value );
+        for ( Listener listener : listenerList ) {
+            if (listener.getType() == type) {
+                listenerList.remove( listener );
             }
         }
+
     }
 
     public void dispatchEvent( Event event ) {
-        for( Listener value : listenerList ) {
-            if( event.getEventId() == value.getType() ){
-                IEventHandler eventHandler = value.getHandler();
+        for( Listener listener : listenerList ) {
+            if( event.getEventId() == listener.getType() ){
+                IEventHandler eventHandler = listener.getHandler();
                 eventHandler.callback( event );
             }
         }
     }
 
     public Boolean hasEventListener( int type ) {
-        for( Listener value : listenerList ) {
-            if( value.getType() == type ){
+        for( Listener listener : listenerList ) {
+            if( listener.getType() == type ){
                return true;
             }
         }
@@ -46,8 +46,7 @@ public class EventDispatcher implements IEventDispatcher {
     }
 
     public void removeAllListeners(){
-        for( Listener value : listenerList ) {
-            listenerList.remove( value );
-        }
+        if ( !listenerList.isEmpty() )
+            listenerList.clear();
     }
 }

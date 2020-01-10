@@ -4,11 +4,7 @@ public class Event {
     private int EventId = 0;
     private Object params;
 
-    public Event( int type,Object params ) {
-        initProperties( type, params );
-    }
-
-    protected void initProperties( int type, Object params ) {
+    public Event( int type, Object params ) {
         EventId = type;
         this.params = params;
     }

@@ -68,31 +68,25 @@ public class FullscreenActivity extends AppCompatActivity {
     private BroadcastReceiver m_WifiStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive( Context context, Intent intent ) {
-            int WifiStateExtra = intent.getIntExtra( WifiManager.EXTRA_WIFI_STATE,
-                    WifiManager.WIFI_STATE_UNKNOWN );
+            int WifiStateExtra = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE,
+                    WifiManager.WIFI_STATE_UNKNOWN);
             switch ( WifiStateExtra ) {
                 case WifiManager.WIFI_STATE_ENABLED:
                     DetectConnectivity ConnectRunnable = new DetectConnectivity();
-                    Thread DetectThread = new Thread( ConnectRunnable );
+                    Thread DetectThread = new Thread(ConnectRunnable);
                     DetectThread.start();
                     break;
-                case WifiManager.WIFI_STATE_DISABLED:
-                    ShowMessageBox( getString( R.string.msg_wifi_not_connected ) );
-                    break;
                 case WifiManager.WIFI_STATE_DISABLING:
-                    if ( m_client.isConnected() )
+                    if (m_client.isConnected()) {
                         m_client.Disconnect();
+                    }
+                    break;
+                case WifiManager.WIFI_STATE_DISABLED:
+                    ShowMessageBox(getString(R.string.msg_wifi_not_connected));
                     break;
             }
         }
     };
-
-    private boolean isNetworkConnected( ) {
-        ConnectivityManager cm =
-                (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-    }
 
     @Override
     protected void onCreate( Bundle savedInstanceState ) {
@@ -115,7 +109,6 @@ public class FullscreenActivity extends AppCompatActivity {
 
         m_ActionBar = getSupportActionBar();
         m_infoView = findViewById( R.id.infoView );
-        SetEnableControls(false);
     }
 
     @Override
@@ -155,6 +148,8 @@ public class FullscreenActivity extends AppCompatActivity {
                 m_mower.RunBlade( isChecked );
             }
         });
+
+        SetEnableControls(false);
     }
 
     /**
@@ -279,13 +274,37 @@ public class FullscreenActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
+        EventDispatcher.getInstance().addEventListener(
+                Local_event_ids.tcp_event_ids.connected.getID(),
+                new IEventHandler() {
+                    @Override
+                    public void callback(Event event) {
+                            SetEnableControls( true );
+                            PostToast( getString( R.string.msg_client_connected ) );
+                    }
+                });
+
+        EventDispatcher.getInstance().addEventListener(
+                Local_event_ids.tcp_event_ids.disconnected.getID(),
+                new IEventHandler() {
+                    @Override
+                    public void callback(Event event) {
+                        SetEnableControls( false );
+                        if ( event.getParams() != null )
+                            PostToast( event.getParams().toString() );
+                        else
+                            PostToast( getString( R.string.msg_client_disconnected ) );
+                    }
+                });
         IntentFilter intentFilter = new IntentFilter( WifiManager.WIFI_STATE_CHANGED_ACTION );
         registerReceiver( m_WifiStateReceiver, intentFilter);
 
         // TODO: Add functionality to read settings value for enabling video feed.
 
-        FrameLayout.LayoutParams joystickparams = (FrameLayout.LayoutParams) m_jstck_move_vihicle.getLayoutParams();
-        FrameLayout.LayoutParams togglebtnparams = (FrameLayout.LayoutParams) m_btn_switch_cut.getLayoutParams();
+        FrameLayout.LayoutParams joystickparams =
+                (FrameLayout.LayoutParams) m_jstck_move_vihicle.getLayoutParams();
+        FrameLayout.LayoutParams togglebtnparams =
+                (FrameLayout.LayoutParams) m_btn_switch_cut.getLayoutParams();
 
         SharedPreferences shared_pref = getSharedPreferences(getPackageName() +
                 "_preferences", MODE_PRIVATE );
@@ -307,6 +326,8 @@ public class FullscreenActivity extends AppCompatActivity {
         super.onPause();
 
         unregisterReceiver(m_WifiStateReceiver);
+        EventDispatcher.getInstance().removeAllListeners();
+
         if ( m_client.isConnected() )
             m_client.Disconnect();
     }
@@ -360,7 +381,7 @@ public class FullscreenActivity extends AppCompatActivity {
 
     public class DetectConnectivity implements Runnable {
 
-        ConnectivityManager connectivityManager
+        ConnectivityManager cm
                 = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
         SharedPreferences shared_pref = getSharedPreferences(getPackageName() +
@@ -387,8 +408,11 @@ public class FullscreenActivity extends AppCompatActivity {
             boolean connected = false;
             int tries = 0;
             while ( !connected && ( tries <= 4 ) ) {
-                if ( isNetworkConnected() ) {
-                    connected =  m_client.Connect( ip, port );
+                NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+                connected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+
+                if ( connected ) {
+                     m_client.Connect( ip, port );
                 }
                 try {
                     Thread.sleep( 2000 );
@@ -397,11 +421,8 @@ public class FullscreenActivity extends AppCompatActivity {
                 }
                 tries++;
             }
-            if ( connected ) {
-                SetEnableControls( true );
-            }
-            else {
-                PostToast( getString( R.string.msg_client_cant_connect ) );
+            if ( !connected ) {
+                ShowMessageBox( getString( R.string.msg_wifi_not_connected ) );
             }
         }
     }

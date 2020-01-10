@@ -8,6 +8,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import android.content.Context;
+import android.content.res.Resources;
 import android.util.Log;
 
 public class TCPClient {
@@ -44,22 +46,12 @@ public class TCPClient {
         mReceiveThread.start();
     }
 
-    public TCPClient(){
-        EventDispatcher.getInstance().addEventListener(
-                Local_event_ids.tcp_event_ids.send.getID(),
-                new IEventHandler() {
-                    @Override
-                    public void callback(Event event) {
-                        if ( isConnected() ) {
-                            startSending();
-                            String data = event.getParams().toString();
-                            mSendRunnable.Send( data.getBytes() );
-                        }
-                    }
-                });
+    private void RiseEvent( int type, String params ) {
+        Event event = new Event( type, params );
+        EventDispatcher.getInstance().dispatchEvent( event );
     }
 
-    public boolean Connect( String ip, int port ){
+    public void Connect( String ip, int port ){
         mSeverIp = ip;
         mServerPort = port;
 
@@ -72,13 +64,28 @@ public class TCPClient {
             //This will block the thread until a connection is established
             if ( !isConnected() )
                 mConnectionSocket.connect( new InetSocketAddress(serverAddr, mServerPort ),
-                        2000);
-            //EventBus.getDefault().post( new EventData( Local_events.TCP_event.connected ) );
+                        10000);
+
+            EventDispatcher.getInstance().addEventListener(
+                    Local_event_ids.tcp_event_ids.send.getID(),
+                    new IEventHandler() {
+                        @Override
+                        public void callback(Event event) {
+                            if ( isConnected() ) {
+                                startSending();
+                                String data = event.getParams().toString();
+                                mSendRunnable.Send( data.getBytes() );
+                            }
+                        }
+                    });
+
+            RiseEvent( Local_event_ids.tcp_event_ids.connected.getID(), null );
+
             startReceiving();
-            return true;
         } catch ( IOException e ) {
             Log.e( LOG_TAG, e.getMessage() );
-            return false;
+            RiseEvent( Local_event_ids.tcp_event_ids.disconnected.getID(),
+                    e.getMessage() );
         }
     }
 
@@ -99,11 +106,13 @@ public class TCPClient {
         try {
             if ( !mConnectionSocket.isClosed() ) {
                 mConnectionSocket.close();
-                //EventBus.getDefault().post( new EventData( Local_events.TCP_event.disconnected ) );
-                //EventBus.getDefault().register(this);
+
+                RiseEvent( Local_event_ids.tcp_event_ids.disconnected.getID(), null );
             }
         } catch (IOException e) {
             Log.e ( LOG_TAG, e.getMessage() );
+            RiseEvent( Local_event_ids.tcp_event_ids.disconnected.getID(),
+                    e.getMessage() );
         }
 
     }
@@ -132,16 +141,13 @@ public class TCPClient {
                     if ( input.read( packet_size, 0, 1 ) > 0 ) {
 
                         ByteArrayOutputStream recieved_data = new ByteArrayOutputStream();
-
                         //Read the first integer, it defines the length of the data to expect
                         byte[] msg = new byte[packet_size[0]];
                         if ( input.read(msg, 0, packet_size[0]) > 0 ) {
                             recieved_data.write(msg, 0, msg.length);
                             recieved_data.flush();
-
-                            /*EventBus.getDefault().post(
-                                    new EventData( Local_events.TCP_event.receive,
-                                    recieved_data ) );*/
+                            RiseEvent( Local_event_ids.tcp_event_ids.response.getID(),
+                                     recieved_data.toString() );
                         }
                     }
 
