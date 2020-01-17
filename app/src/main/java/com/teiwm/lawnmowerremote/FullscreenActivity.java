@@ -9,9 +9,9 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.Gravity;
@@ -23,10 +23,12 @@ import android.view.MenuItem;
 import android.content.Intent;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
-import android.widget.Switch;
+import android.widget.Switch;;
 import android.widget.TextView;
-import android.widget.ScrollView;
 import android.widget.Toast;
+
+import com.jaygoo.widget.RangeSeekBar;
+
 import io.github.controlwear.virtual.joystick.android.JoystickView;
 
 /**
@@ -58,12 +60,11 @@ public class FullscreenActivity extends AppCompatActivity {
 
     private View mContentView;
 
-    private ScrollView m_infoScroll;
     private Switch m_btn_switch_cut;
-    private JoystickView m_jstck_move_vihicle;
-
+    private JoystickView m_jstck_move_vehicle;
+    private RangeSeekBar m_blade_height;
     private ActionBar m_ActionBar;
-    private TextView m_infoView;
+    private TextView m_seek_description;
 
     private BroadcastReceiver m_WifiStateReceiver = new BroadcastReceiver() {
         @Override
@@ -103,12 +104,12 @@ public class FullscreenActivity extends AppCompatActivity {
             }
         });
 
-        m_infoScroll = findViewById( R.id.infoScroll );
         m_btn_switch_cut = findViewById(R.id.button_switch_cut);
-        m_jstck_move_vihicle = findViewById( R.id.joystickView_Left );
+        m_jstck_move_vehicle = findViewById( R.id.joystickView);
 
         m_ActionBar = getSupportActionBar();
-        m_infoView = findViewById( R.id.infoView );
+        m_blade_height = findViewById( R.id.seekbar_set_height);
+        m_seek_description = findViewById( R.id.seek_bar_description );
     }
 
     @Override
@@ -134,10 +135,10 @@ public class FullscreenActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        m_jstck_move_vihicle.setOnMoveListener(new JoystickView.OnMoveListener()
+        m_jstck_move_vehicle.setOnMoveListener(new JoystickView.OnMoveListener()
         {
             public void onMove( int angle, int strength ) {
-                if ( !m_jstck_move_vihicle.isEnabled() )
+                if ( !m_jstck_move_vehicle.isEnabled() )
                     return;
                 m_mower.Move( angle, strength);
             }
@@ -148,6 +149,7 @@ public class FullscreenActivity extends AppCompatActivity {
                 m_mower.RunBlade( isChecked );
             }
         });
+        m_blade_height.setIndicatorTextDecimalFormat("0");
 
         SetEnableControls(false);
     }
@@ -301,24 +303,37 @@ public class FullscreenActivity extends AppCompatActivity {
 
         // TODO: Add functionality to read settings value for enabling video feed.
 
-        FrameLayout.LayoutParams joystickparams =
-                (FrameLayout.LayoutParams) m_jstck_move_vihicle.getLayoutParams();
-        FrameLayout.LayoutParams togglebtnparams =
-                (FrameLayout.LayoutParams) m_btn_switch_cut.getLayoutParams();
-
         SharedPreferences shared_pref = getSharedPreferences(getPackageName() +
                 "_preferences", MODE_PRIVATE );
 
         if ( shared_pref.getBoolean("key_settings_mirror_controls", false) ) {
-            joystickparams.gravity = ( Gravity.BOTTOM | Gravity.END );
-            togglebtnparams.gravity = ( Gravity.BOTTOM | Gravity.START );
+            ((FrameLayout.LayoutParams) m_btn_switch_cut.getLayoutParams()).gravity =
+                    ( Gravity.BOTTOM | Gravity.START );
+
+            ((FrameLayout.LayoutParams) m_blade_height.getLayoutParams()).gravity =
+                    ( Gravity.BOTTOM | Gravity.START );
+
+            ((FrameLayout.LayoutParams) m_seek_description.getLayoutParams()).gravity =
+                    ( Gravity.TOP | Gravity.START );
+
+            ((FrameLayout.LayoutParams) m_jstck_move_vehicle.getLayoutParams()).gravity =
+                    ( Gravity.BOTTOM | Gravity.END );
+
         } else {
-            joystickparams.gravity = ( Gravity.BOTTOM | Gravity.START );
-            togglebtnparams.gravity = ( Gravity.BOTTOM | Gravity.END );
+            ((FrameLayout.LayoutParams) m_jstck_move_vehicle.getLayoutParams()).gravity =
+                    ( Gravity.BOTTOM | Gravity.START );
+
+            ((FrameLayout.LayoutParams) m_btn_switch_cut.getLayoutParams()).gravity =
+                    ( Gravity.BOTTOM | Gravity.END );
+
+            ((FrameLayout.LayoutParams) m_blade_height.getLayoutParams()).gravity =
+                    ( Gravity.BOTTOM | Gravity.END );
+            ((FrameLayout.LayoutParams) m_seek_description.getLayoutParams()).gravity =
+                    ( Gravity.TOP | Gravity.END );
         }
 
-        m_jstck_move_vihicle.setLayoutParams( joystickparams );
-        m_btn_switch_cut.setLayoutParams( togglebtnparams );
+        //m_jstck_move_vehicle.setLayoutParams( joystickparams );
+       // m_btn_switch_cut.setLayoutParams( togglebtnparams );
     }
 
     @Override
@@ -345,12 +360,23 @@ public class FullscreenActivity extends AppCompatActivity {
             @Override
             public void run() {
                 if ( enabled ) {
-                    m_btn_switch_cut.setEnabled(true);
-                    m_jstck_move_vihicle.setEnabled(true);
+                    m_btn_switch_cut.setEnabled( true );
+                    m_jstck_move_vehicle.setEnabled( true );
+                    m_jstck_move_vehicle.setButtonColor(
+                            getResources().getColor( R.color.colorControlEnabled ) );
+                    m_jstck_move_vehicle.setBorderColor(
+                            getResources().getColor( R.color.colorControlEnabled ) );
+                    m_blade_height.setEnabled( true );
+
                 } else {
                     m_btn_switch_cut.setChecked( false );
-                    m_btn_switch_cut.setEnabled(false);
-                    m_jstck_move_vihicle.setEnabled(false);
+                    m_btn_switch_cut.setEnabled( false );
+                    m_jstck_move_vehicle.setEnabled( false );
+                    m_jstck_move_vehicle.setButtonColor(
+                            getResources().getColor( R.color.colorControlDisabled ) );
+                    m_jstck_move_vehicle.setBorderColor(
+                            getResources().getColor( R.color.colorControlDisabled ) );
+                    m_blade_height.setEnabled( false );
                 }
             }
         });

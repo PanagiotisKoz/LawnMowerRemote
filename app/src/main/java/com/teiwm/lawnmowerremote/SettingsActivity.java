@@ -1,9 +1,11 @@
 package com.teiwm.lawnmowerremote;
 
 import android.os.Bundle;
-import android.support.v7.preference.EditTextPreference;
-import android.support.v7.preference.PreferenceFragmentCompat;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.preference.EditTextPreference;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.appcompat.app.AppCompatActivity;
 
 /**
  * A {@link AppCompatActivity} that presents a set of application settings. On
@@ -30,12 +32,28 @@ public class SettingsActivity extends AppCompatActivity {
         public void onCreatePreferences( Bundle savedInstanceState, String rootKey)
         {
             setPreferencesFromResource( R.xml.pref_general, rootKey );
-            EditTextPreference ipPreference =
+            final EditTextPreference ipPreference =
                     (EditTextPreference) findPreference("key_settings_ip");
-            EditTextPreference portPreference =
+            final EditTextPreference portPreference =
                     (EditTextPreference) findPreference("key_settings_port");
             ipPreference.setSummary( ipPreference.getText() );
             portPreference.setSummary( portPreference.getText() );
+
+            ipPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newVal) {
+                    ipPreference.setSummary(newVal.toString());
+                    return true;
+                }
+            });
+
+            portPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newVal) {
+                    portPreference.setSummary(newVal.toString());
+                    return true;
+                }
+            });
         }
     }
 }

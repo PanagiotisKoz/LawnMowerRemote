@@ -8,7 +8,7 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
@@ -20,11 +20,18 @@ android {
 }
 
 dependencies {
+    def version = "1.1.0"
+    def seek_bar_version = "v3.0.0"
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.android.support:preference-v7:28.0.0'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation 'io.github.controlwear:virtualjoystick:1.9.2'
+    implementation "androidx.appcompat:appcompat:$version"
+    implementation "androidx.core:core:$version"
+    implementation "androidx.fragment:fragment:$version"
+    implementation 'androidx.preference:preference:1.1.0'
     implementation 'org.jetbrains:annotations-java5:15.0'
+    implementation 'io.github.controlwear:virtualjoystick:1.10.1'
+    implementation "com.github.Jay-Goo:RangeSeekBar:$seek_bar_version"
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+
+
 }

@@ -13,10 +13,10 @@
         android:id="@+id/videoView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="center" />
+        android:visibility="invisible" />
 
     <io.github.controlwear.virtual.joystick.android.JoystickView
-        android:id="@+id/joystickView_Left"
+        android:id="@+id/joystickView"
         android:layout_width="wrap_content"
         android:layout_height="200dp"
         android:layout_gravity="bottom|start"
@@ -24,11 +24,10 @@
         android:layout_marginLeft="24dp"
         android:layout_marginBottom="8dp"
         custom:JV_autoReCenterButton="true"
-        custom:JV_backgroundColor="@color/colorJoystickBackGround"
         custom:JV_backgroundSizeRatio="80%"
-        custom:JV_borderColor="@color/colorJoystickBorder"
+        custom:JV_borderColor="@color/colorControlDisabled"
         custom:JV_borderWidth="4dp"
-        custom:JV_buttonColor="@color/colorJoystickButton"
+        custom:JV_buttonColor="@color/colorControlDisabled"
         custom:JV_buttonDirection="both"
         custom:JV_buttonSizeRatio="10%" />
 
@@ -38,33 +37,55 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginRight="40dp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="30dp"
+        android:switchPadding="10dp"
         android:text="@string/button_switch_cut"
-        android:textColor="#ffffff"
+        android:textColor="@color/colorText"
         android:textSize="18sp"
         tools:checked="false" />
 
-    <ScrollView
-        android:id="@+id/infoScroll"
+    <com.jaygoo.widget.VerticalRangeSeekBar
+        android:id="@+id/seekbar_set_height"
+        style="@style/Widget.AppCompat.SeekBar"
         android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:layout_gravity="bottom|center"
-        android:layout_marginBottom="20dp"
-        android:fadingEdge="none">
+        android:layout_height="match_parent"
+        android:layout_gravity="right|top"
+        android:layout_marginTop="40dp"
+        android:layout_marginRight="40dp"
+        android:layout_marginBottom="60dp"
+        custom:rsb_gravity="bottom"
+        custom:rsb_indicator_height="wrap_content"
+        custom:rsb_indicator_margin="5dp"
+        custom:rsb_indicator_padding_left="5dp"
+        custom:rsb_indicator_padding_right="5dp"
+        custom:rsb_indicator_padding_top="5dp"
+        custom:rsb_indicator_radius="5dp"
+        custom:rsb_indicator_show_mode="alwaysShow"
+        custom:rsb_indicator_text_orientation="horizontal"
+        custom:rsb_indicator_text_size="20dp"
+        custom:rsb_indicator_width="wrap_content"
+        custom:rsb_max="60"
+        custom:rsb_min="0"
+        custom:rsb_mode="single"
+        custom:rsb_orientation="left"
+        custom:rsb_progress_color="@color/colorControlEnabled"
+        custom:rsb_progress_height="10dp"
+        custom:rsb_tick_mark_gravity="center"
+        custom:rsb_tick_mark_layout_gravity="bottom"
+        custom:rsb_tick_mark_mode="other"
+        custom:rsb_tick_mark_number="60"
+        custom:rsb_tick_mark_orientation="vertical"
+        custom:rsb_tick_mark_text_array="@array/seekBarArray"
+        custom:rsb_tick_mark_text_margin="20dp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/infoView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|center"
-                android:layout_marginBottom="20dp"
-                android:textColor="#80FAF6F6"
-                android:textSize="18sp" />
-        </LinearLayout>
-    </ScrollView>
+    <TextView
+        android:id="@+id/seek_bar_description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginTop="30dp"
+        android:layout_marginRight="50dp"
+        android:text="@string/seek_bar_description"
+        android:textColor="@color/colorText"
+        android:textSize="18sp" />
 </FrameLayout>

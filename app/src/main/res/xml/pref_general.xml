@@ -1,4 +1,6 @@
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
         android:title="Connection"
         android:key="connection_category">
@@ -6,8 +8,6 @@
         <EditTextPreference
             android:id="@+id/ip_TextView"
             android:defaultValue="@string/pref_default_ip_value"
-            android:digits="@string/pref_text_ip_digits"
-            android:inputType="number"
             android:key="key_settings_ip"
             android:maxLines="1"
             android:selectAllOnFocus="true"
@@ -15,9 +15,9 @@
             android:title="@string/pref_title_ip" />
 
         <EditTextPreference
-            android:id="@+id/port_TextView"
-            android:defaultValue="@string/pref_default_port_value"
             android:digits="@string/pref_text_port_digits"
+            android:defaultValue="@string/pref_default_port_value"
+            android:id="@+id/port_TextView"
             android:inputType="number"
             android:key="key_settings_port"
             android:maxLines="1"
@@ -27,21 +27,19 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="Mower Settings"
-        android:key="mower_category">
+        android:key="mower_category"
+        android:title="Video Settings">
 
-            <SwitchPreference
-                android:defaultValue="false"
-                android:key="key_settings_video"
-                android:title="@string/pref_title_video"
-                android:summary="@string/pref_title_video_summary"/>
-            <ListPreference
-                android:title="@string/pref_title_video_resolution"
-                android:summary="@string/pref_title_video_resolution_summary"
-                android:key="key_settings_size"
-                android:entries="@array/resolutionsArray"
-                android:entryValues="@array/resolutionsValue"
-                android:defaultValue="1"/>
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="key_settings_video"
+            android:summary="@string/pref_title_video_summary"
+            android:title="@string/pref_title_video" />
+        <ListPreference
+            android:entries="@array/resolutionsArray"
+            android:key="key_settings_size"
+            android:summary="@string/pref_title_video_resolution_summary"
+            android:title="@string/pref_title_video_resolution" />
     </PreferenceCategory>
 
     <PreferenceCategory

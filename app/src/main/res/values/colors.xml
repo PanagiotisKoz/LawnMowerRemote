@@ -2,12 +2,12 @@
 <resources>
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="colorAccent">#62B409</color>
 
     <color name="black_overlay">#ff000000</color>
 
     <color name="colorText">#FFFFFF</color>
-    <color name="colorJoystickBackGround">#00060606</color>
-    <color name="colorJoystickButton">#bebeba</color>
-    <color name="colorJoystickBorder">#696767</color>
+
+    <color name="colorControlEnabled">#62B409</color>
+    <color name="colorControlDisabled">#bebeba</color>
 </resources>

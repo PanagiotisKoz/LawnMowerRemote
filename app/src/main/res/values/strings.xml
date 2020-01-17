@@ -5,9 +5,11 @@
     <string name="title_activity_settings">Settings</string>
 
     <!-- Strings related to MainApp -->
-
+    <!-- Strings for controls -->
     <string name="button_switch_cut">Cut</string>
+    <string name="seek_bar_description">Blade height</string>
 
+    <!-- Information messages -->
     <string name="msg_wifi_not_connected">This app requires wi-fi connection.
                                           Please connect to an access point before it is used.</string>
     <string name="msg_client_wrong_server">Protocol not understanding. \n
@@ -16,14 +18,12 @@
     <string name="msg_client_disconnected">Connection closed.</string>
     <string name="msg_wrong_wifi_port">Something wrong with port number.\n
                                         We force to use 8080.</string>
-
-
     <string name="msg_box_ok">OK</string>
+    <!-- End of strings related to MainApp -->
 
     <!-- Strings related to Settings -->
-
     <!-- Strings ralated to ip address settings -->
-    <string name="pref_title_ip">Lawn mower IP address</string>
+    <string name="pref_title_ip">Lawn mower server IP address or host name.</string>
     <string name="pref_default_ip_value">lawnmower.local</string>
     <string name="pref_text_ip_digits">0123456789.</string>
     <string name="toast_text_wrong_ip">Please enter a valid ip address /nExample: 127.0.0.1</string>
@@ -46,4 +46,5 @@
     <string name="pref_title_mirror_controls">Mirror controls</string>
     <string name="pref_title_mirror_controls_summary">Mirror layout of UI controls, to controlling
                                                       the lawn mower with right hand.</string>
+    <!-- End of strings related to Settings -->
 </resources>
