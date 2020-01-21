@@ -5,11 +5,6 @@
         <item>1080*720</item>
         <item>720*440</item>
     </string-array>
-    <string-array name="resolutionsValue">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-    </string-array>
     <string-array name="seekBarArray">
         <item>0mm</item>
         <item>10mm</item>

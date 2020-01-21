@@ -1,12 +1,31 @@
 package com.teiwm.lawnmowerremote;
 
-// Lawn mower event forwaring class
+import java.util.Locale;
+
+// Lawn mower event forwarding helper class
 public class CommManager {
     private static String LOG_TAG = "RPI events forwarder";
 
     // Prevent sending same data over and over again.
     private int mLastMoveDir = 0;
     private int mLastMoveStrength = 0;
+
+    CommManager() {
+        EventDispatcher.getInstance().addEventListener(
+                Local_event_ids.tcp_event_ids.response.getID(),
+                new IEventHandler() {
+                    @Override
+                    public void callback(Event event) {
+                        if ( event.getParams() != null ) {
+                            AnalyzeResponse( event.getParams().toString() );
+                        }
+                    }
+                });
+    }
+
+    private void AnalyzeResponse( String response ) {
+
+    }
 
     public void Move ( int angle, int strength ){
 
@@ -51,6 +70,15 @@ public class CommManager {
         Event event = new Event( Local_event_ids.tcp_event_ids.send.getID(),
                 properties );
 
+        EventDispatcher.getInstance().dispatchEvent( event );
+    }
+
+    void SetBladeHeight( float height ){
+        String properties = Mower_event_ids.general_event_ids.propety_set.getID() + " "
+                + Mower_event_ids.property_event_ids.blade_height.getID() + " "
+                + String.format( Locale.getDefault(), "%.1f", height);
+        Event event = new Event( Local_event_ids.tcp_event_ids.send.getID(),
+                properties );
         EventDispatcher.getInstance().dispatchEvent( event );
     }
 }

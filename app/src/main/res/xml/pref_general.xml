@@ -6,7 +6,6 @@
         android:key="connection_category">
 
         <EditTextPreference
-            android:id="@+id/ip_TextView"
             android:defaultValue="@string/pref_default_ip_value"
             android:key="key_settings_ip"
             android:maxLines="1"
@@ -17,7 +16,6 @@
         <EditTextPreference
             android:digits="@string/pref_text_port_digits"
             android:defaultValue="@string/pref_default_port_value"
-            android:id="@+id/port_TextView"
             android:inputType="number"
             android:key="key_settings_port"
             android:maxLines="1"

@@ -23,12 +23,11 @@ import android.view.MenuItem;
 import android.content.Intent;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
-import android.widget.Switch;;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import com.jaygoo.widget.OnRangeChangedListener;
 import com.jaygoo.widget.RangeSeekBar;
-
 import io.github.controlwear.virtual.joystick.android.JoystickView;
 
 /**
@@ -66,6 +65,25 @@ public class FullscreenActivity extends AppCompatActivity {
     private ActionBar m_ActionBar;
     private TextView m_seek_description;
 
+    private IEventHandler m_OnConnect =  new IEventHandler() {
+        @Override
+        public void callback(Event event) {
+            SetEnableControls( true );
+            PostToast( getString( R.string.msg_client_connected ) );
+        }
+    };
+
+    private IEventHandler m_OnDisconnect = new IEventHandler() {
+        @Override
+        public void callback(Event event) {
+            SetEnableControls( false );
+            if ( event.getParams() != null )
+                PostToast( event.getParams().toString() );
+            else
+                PostToast( getString( R.string.msg_client_disconnected ) );
+        }
+    };
+
     private BroadcastReceiver m_WifiStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive( Context context, Intent intent ) {
@@ -100,7 +118,31 @@ public class FullscreenActivity extends AppCompatActivity {
         mContentView.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick( View view ) {
-                toggle();
+                if ( m_ActionBar.isShowing() ) {
+                    // Hide UI first
+                    if ( m_ActionBar != null ) {
+                        m_ActionBar.hide();
+                    }
+
+                    // Schedule a runnable to remove the status and navigation bar after a delay
+                    mHideHandler.removeCallbacks( mShowPart2Runnable );
+                    mHideHandler.postDelayed( mHidePart2Runnable, UI_ANIMATION_DELAY );
+
+                    // Check for server connection
+                    if ( !m_client.isConnected() ) {
+                        DetectConnectivity ConnectRunnable = new DetectConnectivity();
+                        Thread DetectThread = new Thread(ConnectRunnable);
+                        DetectThread.start();
+                    }
+                } else {
+                    // Show the system bar
+                    mContentView.setSystemUiVisibility( View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION );
+
+                    // Schedule a runnable to display UI elements after a delay
+                    mHideHandler.removeCallbacks( mHidePart2Runnable );
+                    mHideHandler.postDelayed( mShowPart2Runnable, UI_ANIMATION_DELAY );
+                }
             }
         });
 
@@ -126,7 +168,7 @@ public class FullscreenActivity extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ShowToast( message );
+                Toast.makeText( getBaseContext(), message, Toast.LENGTH_LONG ).show();
             }
         });
     }
@@ -135,11 +177,11 @@ public class FullscreenActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
+        SetEnableControls(false);
+
         m_jstck_move_vehicle.setOnMoveListener(new JoystickView.OnMoveListener()
         {
             public void onMove( int angle, int strength ) {
-                if ( !m_jstck_move_vehicle.isEnabled() )
-                    return;
                 m_mower.Move( angle, strength);
             }
         }, 200);
@@ -149,9 +191,24 @@ public class FullscreenActivity extends AppCompatActivity {
                 m_mower.RunBlade( isChecked );
             }
         });
-        m_blade_height.setIndicatorTextDecimalFormat("0");
 
-        SetEnableControls(false);
+        m_blade_height.setIndicatorTextDecimalFormat("0.0");
+        m_blade_height.setOnRangeChangedListener(new OnRangeChangedListener() {
+            float height = 0;
+            @Override
+            public void onRangeChanged(RangeSeekBar view, float leftValue, float rightValue, boolean isFromUser) {
+                height = leftValue;
+            }
+
+            @Override
+            public void onStartTrackingTouch(RangeSeekBar view, boolean isLeft) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(RangeSeekBar view, boolean isLeft) {
+                m_mower.SetBladeHeight( height );
+            }
+        });
     }
 
     /**
@@ -178,25 +235,6 @@ public class FullscreenActivity extends AppCompatActivity {
         }
     };
 
-    private void toggle() {
-        if ( m_ActionBar.isShowing() ) {
-            hide();
-        } else {
-            show();
-        }
-    }
-
-    private void hide() {
-        // Hide UI first
-        if ( m_ActionBar != null ) {
-            m_ActionBar.hide();
-        }
-
-        // Schedule a runnable to remove the status and navigation bar after a delay
-        mHideHandler.removeCallbacks( mShowPart2Runnable );
-        mHideHandler.postDelayed( mHidePart2Runnable, UI_ANIMATION_DELAY );
-    }
-
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint( "InlinedApi" )
         @Override
@@ -215,17 +253,6 @@ public class FullscreenActivity extends AppCompatActivity {
         }
     };
 
-    @SuppressLint("InlinedApi")
-    private void show() {
-        // Show the system bar
-        mContentView.setSystemUiVisibility( View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION );
-
-        // Schedule a runnable to display UI elements after a delay
-        mHideHandler.removeCallbacks( mHidePart2Runnable );
-        mHideHandler.postDelayed( mShowPart2Runnable, UI_ANIMATION_DELAY );
-    }
-
     private final Runnable mShowPart2Runnable = new Runnable() {
         @Override
         public void run() {
@@ -241,7 +268,14 @@ public class FullscreenActivity extends AppCompatActivity {
     private final Runnable mHideRunnable = new Runnable() {
         @Override
         public void run() {
-            hide();
+            // Hide UI first
+            if ( m_ActionBar != null ) {
+                m_ActionBar.hide();
+            }
+
+            // Schedule a runnable to remove the status and navigation bar after a delay
+            mHideHandler.removeCallbacks( mShowPart2Runnable );
+            mHideHandler.postDelayed( mHidePart2Runnable, UI_ANIMATION_DELAY );
         }
     };
 
@@ -277,27 +311,11 @@ public class FullscreenActivity extends AppCompatActivity {
         super.onResume();
 
         EventDispatcher.getInstance().addEventListener(
-                Local_event_ids.tcp_event_ids.connected.getID(),
-                new IEventHandler() {
-                    @Override
-                    public void callback(Event event) {
-                            SetEnableControls( true );
-                            PostToast( getString( R.string.msg_client_connected ) );
-                    }
-                });
+                Local_event_ids.tcp_event_ids.connected.getID(), m_OnConnect );
 
         EventDispatcher.getInstance().addEventListener(
-                Local_event_ids.tcp_event_ids.disconnected.getID(),
-                new IEventHandler() {
-                    @Override
-                    public void callback(Event event) {
-                        SetEnableControls( false );
-                        if ( event.getParams() != null )
-                            PostToast( event.getParams().toString() );
-                        else
-                            PostToast( getString( R.string.msg_client_disconnected ) );
-                    }
-                });
+                Local_event_ids.tcp_event_ids.disconnected.getID(), m_OnDisconnect );
+
         IntentFilter intentFilter = new IntentFilter( WifiManager.WIFI_STATE_CHANGED_ACTION );
         registerReceiver( m_WifiStateReceiver, intentFilter);
 
@@ -331,9 +349,6 @@ public class FullscreenActivity extends AppCompatActivity {
             ((FrameLayout.LayoutParams) m_seek_description.getLayoutParams()).gravity =
                     ( Gravity.TOP | Gravity.END );
         }
-
-        //m_jstck_move_vehicle.setLayoutParams( joystickparams );
-       // m_btn_switch_cut.setLayoutParams( togglebtnparams );
     }
 
     @Override
@@ -341,7 +356,8 @@ public class FullscreenActivity extends AppCompatActivity {
         super.onPause();
 
         unregisterReceiver(m_WifiStateReceiver);
-        EventDispatcher.getInstance().removeAllListeners();
+        EventDispatcher.getInstance().removeEventListener( m_OnConnect );
+        EventDispatcher.getInstance().removeEventListener( m_OnDisconnect );
 
         if ( m_client.isConnected() )
             m_client.Disconnect();
@@ -367,6 +383,8 @@ public class FullscreenActivity extends AppCompatActivity {
                     m_jstck_move_vehicle.setBorderColor(
                             getResources().getColor( R.color.colorControlEnabled ) );
                     m_blade_height.setEnabled( true );
+                    m_blade_height.setStepsColor(
+                            getResources().getColor( R.color.colorControlEnabled ) );
 
                 } else {
                     m_btn_switch_cut.setChecked( false );
@@ -377,6 +395,8 @@ public class FullscreenActivity extends AppCompatActivity {
                     m_jstck_move_vehicle.setBorderColor(
                             getResources().getColor( R.color.colorControlDisabled ) );
                     m_blade_height.setEnabled( false );
+                    m_blade_height.setStepsColor(
+                            getResources().getColor( R.color.colorControlDisabled ) );
                 }
             }
         });

@@ -25,6 +25,16 @@ public class TCPClient {
 
     private String mSeverIp =   "0.0.0.0";
     private int mServerPort = 0;
+    private IEventHandler m_OnSend = new IEventHandler() {
+        @Override
+        public void callback(Event event) {
+            if ( isConnected() ) {
+                startSending();
+                String data = event.getParams().toString();
+                mSendRunnable.Send( data.getBytes() );
+            }
+        }
+    };
 
     private void stopThreads() {
         if ( mReceiveThread != null )
@@ -67,17 +77,7 @@ public class TCPClient {
                         10000);
 
             EventDispatcher.getInstance().addEventListener(
-                    Local_event_ids.tcp_event_ids.send.getID(),
-                    new IEventHandler() {
-                        @Override
-                        public void callback(Event event) {
-                            if ( isConnected() ) {
-                                startSending();
-                                String data = event.getParams().toString();
-                                mSendRunnable.Send( data.getBytes() );
-                            }
-                        }
-                    });
+                    Local_event_ids.tcp_event_ids.send.getID(), m_OnSend );
 
             RiseEvent( Local_event_ids.tcp_event_ids.connected.getID(), null );
 
@@ -104,6 +104,8 @@ public class TCPClient {
         stopThreads();
 
         try {
+            EventDispatcher.getInstance().removeEventListener( m_OnSend );
+
             if ( !mConnectionSocket.isClosed() ) {
                 mConnectionSocket.close();
 

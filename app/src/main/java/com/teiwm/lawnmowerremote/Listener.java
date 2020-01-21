@@ -1,16 +1,10 @@
 package com.teiwm.lawnmowerremote;
 
 public class Listener {
-    private int type;
     private IEventHandler handler;
 
-    public Listener( int type, IEventHandler handler ) {
-        this.type = type;
+    public Listener(  IEventHandler handler ) {
         this.handler = handler;
-    }
-
-    public int getType() {
-        return this.type;
     }
 
     public IEventHandler getHandler() {

@@ -1,7 +1,10 @@
 package com.teiwm.lawnmowerremote;
 
+import android.util.SparseArray;
+
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Map;
 
 public class EventDispatcher implements IEventDispatcher {
     private static EventDispatcher ourInstance = new EventDispatcher();
@@ -10,43 +13,42 @@ public class EventDispatcher implements IEventDispatcher {
         return ourInstance;
     }
 
-    private ArrayList<Listener> listenerList = new ArrayList<>();
+    private SparseArray< ArrayList< Listener > > listeners = new SparseArray<>();
 
     public void addEventListener( int type, IEventHandler handler ) {
-        Listener listener = new Listener( type, handler );
-        listenerList.add( listener );
+        ArrayList< Listener > listenersList = listeners.get( type );
+        if ( listenersList == null ) {
+            listenersList = new ArrayList<>( );
+            listenersList.add( new Listener(handler) );
+            listeners.put( type, listenersList );
+        }
+        else {
+            listenersList.add( new Listener(handler) );
+        }
     }
 
-    public void removeEventListener( int type ) {
-        for ( Listener listener : listenerList ) {
-            if (listener.getType() == type) {
-                listenerList.remove( listener );
+    public void removeEventListener( IEventHandler handler ) {
+        for( int i = 0; i < listeners.size(); i++ ) {
+            ArrayList< Listener > list = listeners.get( listeners.keyAt( i ) );
+            for ( Listener listener : list ) {
+                if (listener.getHandler() == handler) {
+                    list.remove( listener );
+                }
             }
         }
-
     }
 
     public void dispatchEvent( Event event ) {
-        for( Listener listener : listenerList ) {
-            if( event.getEventId() == listener.getType() ){
-                IEventHandler eventHandler = listener.getHandler();
-                eventHandler.callback( event );
-            }
-        }
-    }
+        ArrayList< Listener > listenersList = listeners.get( event.getEventId() );
 
-    public Boolean hasEventListener( int type ) {
-        for( Listener listener : listenerList ) {
-            if( listener.getType() == type ){
-               return true;
-            }
+        for( Listener listener : listenersList ) {
+            IEventHandler eventHandler = listener.getHandler();
+            eventHandler.callback( event );
         }
-
-        return false;
     }
 
     public void removeAllListeners(){
-        if ( !listenerList.isEmpty() )
-            listenerList.clear();
+        if ( listeners.size() != 0 )
+            listeners.clear();
     }
 }

@@ -10,7 +10,6 @@
     tools:context=".FullscreenActivity">
 
     <VideoView
-        android:id="@+id/videoView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="invisible" />
@@ -21,7 +20,6 @@
         android:layout_height="200dp"
         android:layout_gravity="bottom|start"
         android:layout_marginStart="24dp"
-        android:layout_marginLeft="24dp"
         android:layout_marginBottom="8dp"
         custom:JV_autoReCenterButton="true"
         custom:JV_backgroundSizeRatio="80%"
@@ -36,7 +34,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_marginRight="40dp"
+        android:layout_marginEnd="40dp"
         android:layout_marginBottom="30dp"
         android:switchPadding="10dp"
         android:text="@string/button_switch_cut"
@@ -49,9 +47,9 @@
         style="@style/Widget.AppCompat.SeekBar"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_gravity="right|top"
+        android:layout_gravity="end|top"
         android:layout_marginTop="40dp"
-        android:layout_marginRight="40dp"
+        android:layout_marginEnd="40dp"
         android:layout_marginBottom="60dp"
         custom:rsb_gravity="bottom"
         custom:rsb_indicator_height="wrap_content"
@@ -70,6 +68,7 @@
         custom:rsb_orientation="left"
         custom:rsb_progress_color="@color/colorControlEnabled"
         custom:rsb_progress_height="10dp"
+        custom:rsb_step_auto_bonding="false"
         custom:rsb_tick_mark_gravity="center"
         custom:rsb_tick_mark_layout_gravity="bottom"
         custom:rsb_tick_mark_mode="other"
@@ -84,7 +83,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="end"
         android:layout_marginTop="30dp"
-        android:layout_marginRight="50dp"
+        android:layout_marginEnd="50dp"
         android:text="@string/seek_bar_description"
         android:textColor="@color/colorText"
         android:textSize="18sp" />

@@ -12,10 +12,8 @@
     <!-- Information messages -->
     <string name="msg_wifi_not_connected">This app requires wi-fi connection.
                                           Please connect to an access point before it is used.</string>
-    <string name="msg_client_wrong_server">Protocol not understanding. \n
-                                            Probably connected to wrong server.</string>
     <string name="msg_client_connected">Connected to RPi server.</string>
-    <string name="msg_client_disconnected">Connection closed.</string>
+    <string name="msg_client_disconnected">Connection closed by server.</string>
     <string name="msg_wrong_wifi_port">Something wrong with port number.\n
                                         We force to use 8080.</string>
     <string name="msg_box_ok">OK</string>
@@ -25,15 +23,12 @@
     <!-- Strings ralated to ip address settings -->
     <string name="pref_title_ip">Lawn mower server IP address or host name.</string>
     <string name="pref_default_ip_value">lawnmower.local</string>
-    <string name="pref_text_ip_digits">0123456789.</string>
-    <string name="toast_text_wrong_ip">Please enter a valid ip address /nExample: 127.0.0.1</string>
 
 
     <!-- Strings ralated to port number settings -->
     <string name="pref_title_port">Port number</string>
     <string name="pref_default_port_value">8080</string>
     <string name="pref_text_port_digits">0123456789</string>
-    <string name="toast_text_wrong_port">Please enter a port number between 1025 and 65535</string>
 
     <!-- Strings ralated to video settings -->
     <string name="pref_title_video">View remote video feed</string>
