@@ -21,25 +21,35 @@
 
     <!-- Strings related to Settings -->
     <!-- Strings ralated to ip address settings -->
-    <string name="pref_title_ip">Lawn mower server IP address or host name.</string>
+    <string name="pref_ip_key">server_ip</string>
+    <string name="pref_ip_title">Lawn mower server IP address or host name.</string>
     <string name="pref_default_ip_value">lawnmower.local</string>
 
 
     <!-- Strings ralated to port number settings -->
-    <string name="pref_title_port">Port number</string>
+    <string name="pref_port_key">server_port</string>
+    <string name="pref_port_title">Port number</string>
     <string name="pref_default_port_value">8080</string>
     <string name="pref_text_port_digits">0123456789</string>
 
+    <!-- Strings ralated to blade height -->
+    <string name="pref_blade_speed_key">blade_speed</string>
+    <string name="pref_blade_speed_title">Blade speed (rpm).</string>
+    <string name="pref_blade_speed_sumary">Set blade cutting speed in rpm.</string>
+
     <!-- Strings ralated to video settings -->
-    <string name="pref_title_video">View remote video feed</string>
-    <string name="pref_title_video_summary">Enable or disable remote video feed,
-                                            from Raspberry pi camera.</string>
-    <string name="pref_title_video_resolution">Select resolution</string>
-    <string name="pref_title_video_resolution_summary">Select remote video feed resolution.</string>
+    <string name="pref_video_feed_key">remote_video_feed</string>
+    <string name="pref_video_feed_title">View remote video feed</string>
+    <string name="pref_video_feed_summary">Enable or disable remote video feed,
+                                      from Raspberry pi camera.</string>
+    <string name="pref_video_feed_resolution_key">video_resolution</string>
+    <string name="pref_video_feed_resolution_title">Select resolution</string>
+    <string name="pref_video_feed_resolution_summary">Select remote video feed resolution.</string>
 
     <!-- Strings ralated to controls settings -->
-    <string name="pref_title_mirror_controls">Mirror controls</string>
-    <string name="pref_title_mirror_controls_summary">Mirror layout of UI controls, to controlling
-                                                      the lawn mower with right hand.</string>
+    <string name="pref_mirror_controls_key">mirror_controls</string>
+    <string name="pref_mirror_controls_title">Mirror controls</string>
+    <string name="pref_mirror_controls_summary">Mirror layout of UI controls, to controlling
+                                                the lawn mower with right hand.</string>
     <!-- End of strings related to Settings -->
 </resources>

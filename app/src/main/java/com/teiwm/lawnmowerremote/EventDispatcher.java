@@ -3,8 +3,6 @@ package com.teiwm.lawnmowerremote;
 import android.util.SparseArray;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 public class EventDispatcher implements IEventDispatcher {
     private static EventDispatcher ourInstance = new EventDispatcher();

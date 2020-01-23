@@ -1,43 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
         android:title="Connection"
         android:key="connection_category">
 
         <EditTextPreference
             android:defaultValue="@string/pref_default_ip_value"
-            android:key="key_settings_ip"
-            android:maxLines="1"
+            android:key="@string/pref_ip_key"
             android:selectAllOnFocus="true"
             android:singleLine="true"
-            android:title="@string/pref_title_ip" />
+            android:title="@string/pref_ip_title" />
 
         <EditTextPreference
             android:digits="@string/pref_text_port_digits"
             android:defaultValue="@string/pref_default_port_value"
             android:inputType="number"
-            android:key="key_settings_port"
-            android:maxLines="1"
+            android:key="@string/pref_port_key"
             android:selectAllOnFocus="true"
             android:singleLine="true"
-            android:title="@string/pref_title_port" />
+            android:title="@string/pref_port_title" />
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:key="mower_category"
-        android:title="Video Settings">
+        android:title="Mower settings"
+        android:key="mower_category">
+
+        <EditTextPreference
+            android:key="@string/pref_blade_speed_key"
+            android:selectAllOnFocus="true"
+            android:inputType="number"
+            android:singleLine="true"
+            android:defaultValue="3200"
+            android:digits="@string/pref_text_port_digits"
+            android:summary="@string/pref_blade_speed_sumary"
+            android:title="@string/pref_blade_speed_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="video_feed_category"
+        android:title="Video feed settings">
 
         <SwitchPreference
             android:defaultValue="false"
-            android:key="key_settings_video"
-            android:summary="@string/pref_title_video_summary"
-            android:title="@string/pref_title_video" />
+            android:key="@string/pref_video_feed_key"
+            android:summary="@string/pref_video_feed_summary"
+            android:title="@string/pref_video_feed_title" />
         <ListPreference
             android:entries="@array/resolutionsArray"
-            android:key="key_settings_size"
-            android:summary="@string/pref_title_video_resolution_summary"
-            android:title="@string/pref_title_video_resolution" />
+            android:key="@string/pref_video_feed_resolution_key"
+            android:summary="@string/pref_video_feed_resolution_summary"
+            android:title="@string/pref_video_feed_resolution_title" />
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -46,9 +58,9 @@
 
         <SwitchPreference
             android:defaultValue="false"
-            android:key="key_settings_mirror_controls"
-            android:title="@string/pref_title_mirror_controls"
-            android:summary="@string/pref_title_mirror_controls_summary"/>
+            android:key="@string/pref_mirror_controls_key"
+            android:title="@string/pref_mirror_controls_title"
+            android:summary="@string/pref_mirror_controls_summary"/>
     </PreferenceCategory>
 
 </PreferenceScreen>

@@ -37,7 +37,7 @@ import io.github.controlwear.virtual.joystick.android.JoystickView;
 public class FullscreenActivity extends AppCompatActivity {
     private static String LOG_TAG = "RPI client app";
     private TCPClient m_client = new TCPClient();
-    private CommManager m_mower = new CommManager();
+    private EventForwarder m_mower = new EventForwarder();
 
     /**
      * Whether or not the system UI should be auto-hidden after
@@ -195,6 +195,7 @@ public class FullscreenActivity extends AppCompatActivity {
         m_blade_height.setIndicatorTextDecimalFormat("0.0");
         m_blade_height.setOnRangeChangedListener(new OnRangeChangedListener() {
             float height = 0;
+
             @Override
             public void onRangeChanged(RangeSeekBar view, float leftValue, float rightValue, boolean isFromUser) {
                 height = leftValue;
@@ -311,10 +312,10 @@ public class FullscreenActivity extends AppCompatActivity {
         super.onResume();
 
         EventDispatcher.getInstance().addEventListener(
-                Local_event_ids.tcp_event_ids.connected.getID(), m_OnConnect );
+                Local_event_ids.tcp_event_ids.connected, m_OnConnect );
 
         EventDispatcher.getInstance().addEventListener(
-                Local_event_ids.tcp_event_ids.disconnected.getID(), m_OnDisconnect );
+                Local_event_ids.tcp_event_ids.disconnected, m_OnDisconnect );
 
         IntentFilter intentFilter = new IntentFilter( WifiManager.WIFI_STATE_CHANGED_ACTION );
         registerReceiver( m_WifiStateReceiver, intentFilter);
@@ -324,7 +325,8 @@ public class FullscreenActivity extends AppCompatActivity {
         SharedPreferences shared_pref = getSharedPreferences(getPackageName() +
                 "_preferences", MODE_PRIVATE );
 
-        if ( shared_pref.getBoolean("key_settings_mirror_controls", false) ) {
+        if ( shared_pref.getBoolean( getString( R.string.pref_mirror_controls_key ),
+                                    false) ) {
             ((FrameLayout.LayoutParams) m_btn_switch_cut.getLayoutParams()).gravity =
                     ( Gravity.BOTTOM | Gravity.START );
 

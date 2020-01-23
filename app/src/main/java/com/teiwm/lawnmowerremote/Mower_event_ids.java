@@ -2,69 +2,36 @@ package com.teiwm.lawnmowerremote;
 
 public class Mower_event_ids {
     // LM events 0000 to 10000 is for communication events.
-    public enum general_event_ids {
-        propety_set ( 21 ),
-        property_get ( 20 ),
-        move( 30 ),
-        shutdown ( 10000 );
-
-        private int mEventID ;
-
-        general_event_ids( int event ) {
-            this.mEventID = event;
-        }
-
-        public int getID( ) { return this.mEventID; }
+    public class general_event_ids {
+        public static final int propety_set = 21;
+        public static final int property_get = 20;
+        public static final int shutdown = 10000;
     }
 
-    public enum server_response_ids {
-        ok ( 8 ),
-        fatal_error ( 10 ),
-        property_unknow ( 11 ),
-        property_return ( 12 );
-
-        private int mEventID ;
-
-        server_response_ids( int event ) {
-            this.mEventID = event;
-        }
-
-        public int getID( ) { return this.mEventID; }
+    public class server_response_ids {
+        public static final int ok = 8;
+        public static final int fatal_error = 10;
+        public static final int property_unknow = 11;
+        public static final int property_return = 12;
     }
 
-    public enum move_event_ids {
-        forward ( 100 ),
-        backward ( 101 ),
-        left ( 102),
-        right (103),
-        front_right (104 ),
-        front_left ( 105 ),
-        back_right ( 106 ),
-        back_left (107 );
-
-        private int mEventID ;
-
-        move_event_ids( int direction ) {
-            this.mEventID = direction;
-        }
-
-        public int getID( ) { return this.mEventID; }
+    public class move_event_ids {
+        public static final int forward = 100;
+        public static final int backward = 101;
+        public static final int left = 102;
+        public static final int right = 103;
+        public static final int front_right = 104;
+        public static final int front_left = 105;
+        public static final int  back_right = 106;
+        public static final int back_left = 107 ;
     }
 
-    public enum property_event_ids {
-        blade_run ( 200 ),
-        camera_on ( 201 ),
-        blade_height ( 202 ),
-        current( 203 ),
-        voltage( 204 );
-
-        private int mEventID ;
-
-        property_event_ids( int direction ) {
-            this.mEventID = direction;
-        }
-
-        public int getID( ) { return this.mEventID; }
+    public class property_event_ids {
+        public static final int blade_run = 200;
+        public static final int camera_on = 201;
+        public static final int blade_height = 202;
+        public static final int current = 203;
+        public static final int voltage = 204;
     }
     // End of LM events.
 }

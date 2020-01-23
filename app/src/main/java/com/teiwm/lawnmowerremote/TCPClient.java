@@ -1,15 +1,13 @@
 package com.teiwm.lawnmowerremote;
 
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-
-import android.content.Context;
-import android.content.res.Resources;
 import android.util.Log;
 
 public class TCPClient {
@@ -36,90 +34,7 @@ public class TCPClient {
         }
     };
 
-    private void stopThreads() {
-        if ( mReceiveThread != null )
-            mReceiveThread.interrupt();
-
-        if ( mSendThread != null )
-            mSendThread.interrupt();
-    }
-
-    private void startSending() {
-        mSendRunnable = new SendRunnable( mConnectionSocket );
-        mSendThread = new Thread( mSendRunnable );
-        mSendThread.start();
-    }
-
-    private void startReceiving() {
-        ReceiveRunnable mReceiveRunnable = new ReceiveRunnable( mConnectionSocket );
-        mReceiveThread = new Thread( mReceiveRunnable );
-        mReceiveThread.start();
-    }
-
-    private void RiseEvent( int type, String params ) {
-        Event event = new Event( type, params );
-        EventDispatcher.getInstance().dispatchEvent( event );
-    }
-
-    public void Connect( String ip, int port ){
-        mSeverIp = ip;
-        mServerPort = port;
-
-        try {
-            InetAddress serverAddr = InetAddress.getByName( mSeverIp );
-            //Create a new instance of Socket
-            mConnectionSocket = new Socket();
-
-            //Start connecting to the server with 2000ms timeout
-            //This will block the thread until a connection is established
-            if ( !isConnected() )
-                mConnectionSocket.connect( new InetSocketAddress(serverAddr, mServerPort ),
-                        10000);
-
-            EventDispatcher.getInstance().addEventListener(
-                    Local_event_ids.tcp_event_ids.send.getID(), m_OnSend );
-
-            RiseEvent( Local_event_ids.tcp_event_ids.connected.getID(), null );
-
-            startReceiving();
-        } catch ( IOException e ) {
-            Log.e( LOG_TAG, e.getMessage() );
-            RiseEvent( Local_event_ids.tcp_event_ids.disconnected.getID(),
-                    e.getMessage() );
-        }
-    }
-
-    /**
-     * Returns true if TCPClient is connected, else false
-     * @return Boolean
-     */
-    public boolean isConnected() {
-        return mConnectionSocket != null && mConnectionSocket.isConnected() && !mConnectionSocket.isClosed();
-    }
-
-    /**
-     * Close connection to server
-     */
-    public void Disconnect() {
-        stopThreads();
-
-        try {
-            EventDispatcher.getInstance().removeEventListener( m_OnSend );
-
-            if ( !mConnectionSocket.isClosed() ) {
-                mConnectionSocket.close();
-
-                RiseEvent( Local_event_ids.tcp_event_ids.disconnected.getID(), null );
-            }
-        } catch (IOException e) {
-            Log.e ( LOG_TAG, e.getMessage() );
-            RiseEvent( Local_event_ids.tcp_event_ids.disconnected.getID(),
-                    e.getMessage() );
-        }
-
-    }
-
-    public class ReceiveRunnable implements Runnable {
+    private class ReceiveRunnable implements Runnable {
         private Socket sock;
         private InputStream input;
 
@@ -139,20 +54,12 @@ public class TCPClient {
                     receiveThreadRunning = true;
 
                 try {
-                    byte[] packet_size = new byte[1];
-                    if ( input.read( packet_size, 0, 1 ) > 0 ) {
-
-                        ByteArrayOutputStream recieved_data = new ByteArrayOutputStream();
-                        //Read the first integer, it defines the length of the data to expect
-                        byte[] msg = new byte[packet_size[0]];
-                        if ( input.read(msg, 0, packet_size[0]) > 0 ) {
-                            recieved_data.write(msg, 0, msg.length);
-                            recieved_data.flush();
-                            RiseEvent( Local_event_ids.tcp_event_ids.response.getID(),
-                                     recieved_data.toString() );
-                        }
+                    InputStreamReader input_reader = new InputStreamReader( input );
+                    BufferedReader buffer = new BufferedReader( input_reader );
+                    String response = buffer.readLine();
+                    if ( !response.isEmpty() ) {
+                        RiseEvent( Local_event_ids.tcp_event_ids.response, response );
                     }
-
                 } catch ( IOException e ) {
                     Log.e ( LOG_TAG, e.getMessage() );
                     if ( isConnected() )
@@ -164,7 +71,7 @@ public class TCPClient {
 
     }
 
-    public class SendRunnable implements Runnable {
+    private class SendRunnable implements Runnable {
 
         byte[] data;
         private OutputStream out;
@@ -214,4 +121,89 @@ public class TCPClient {
             }
         }
     }
+
+    private void stopThreads() {
+        if ( mReceiveThread != null )
+            mReceiveThread.interrupt();
+
+        if ( mSendThread != null )
+            mSendThread.interrupt();
+    }
+
+    private void startSending() {
+        mSendRunnable = new SendRunnable( mConnectionSocket );
+        mSendThread = new Thread( mSendRunnable );
+        mSendThread.start();
+    }
+
+    private void startReceiving() {
+        ReceiveRunnable mReceiveRunnable = new ReceiveRunnable( mConnectionSocket );
+        mReceiveThread = new Thread( mReceiveRunnable );
+        mReceiveThread.start();
+    }
+
+    private void RiseEvent( int type, String params ) {
+        Event event = new Event( type, params );
+        EventDispatcher.getInstance().dispatchEvent( event );
+    }
+
+    public void Connect( String ip, int port ){
+        mSeverIp = ip;
+        mServerPort = port;
+
+        try {
+            InetAddress serverAddr = InetAddress.getByName( mSeverIp );
+            //Create a new instance of Socket
+            mConnectionSocket = new Socket();
+
+            //Start connecting to the server with 2000ms timeout
+            //This will block the thread until a connection is established
+            if ( !isConnected() )
+                mConnectionSocket.connect( new InetSocketAddress(serverAddr, mServerPort ),
+                        10000);
+
+            EventDispatcher.getInstance().addEventListener(
+                    Local_event_ids.tcp_event_ids.send, m_OnSend );
+
+            RiseEvent( Local_event_ids.tcp_event_ids.connected, null );
+
+            startReceiving();
+        } catch ( IOException e ) {
+            Log.e( LOG_TAG, e.getMessage() );
+            RiseEvent( Local_event_ids.tcp_event_ids.disconnected,
+                    e.getMessage() );
+        }
+    }
+
+    /**
+     * Returns true if TCPClient is connected, else false
+     * @return Boolean
+     */
+    public boolean isConnected() {
+        return mConnectionSocket != null && mConnectionSocket.isConnected() && !mConnectionSocket.isClosed();
+    }
+
+    /**
+     * Close connection to server
+     */
+    public void Disconnect() {
+        stopThreads();
+
+        try {
+            EventDispatcher.getInstance().removeEventListener( m_OnSend );
+
+            if ( !mConnectionSocket.isClosed() ) {
+                mConnectionSocket.close();
+
+                RiseEvent( Local_event_ids.tcp_event_ids.disconnected, null );
+            }
+        } catch (IOException e) {
+            Log.e ( LOG_TAG, e.getMessage() );
+            RiseEvent( Local_event_ids.tcp_event_ids.disconnected,
+                    e.getMessage() );
+        }
+
+    }
+
+
 }

@@ -1,7 +1,7 @@
 package com.teiwm.lawnmowerremote;
 
 import android.os.Bundle;
-
+import android.util.Log;
 import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
  * API Guide</a> for more information on developing a Settings UI.
  */
 public class SettingsActivity extends AppCompatActivity {
+    private static String LOG_TAG = "Settings activity";
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,29 +32,35 @@ public class SettingsActivity extends AppCompatActivity {
         @Override
         public void onCreatePreferences( Bundle savedInstanceState, String rootKey)
         {
-            setPreferencesFromResource( R.xml.pref_general, rootKey );
-            final EditTextPreference ipPreference =
-                    (EditTextPreference) findPreference("key_settings_ip");
-            final EditTextPreference portPreference =
-                    (EditTextPreference) findPreference("key_settings_port");
-            ipPreference.setSummary( ipPreference.getText() );
-            portPreference.setSummary( portPreference.getText() );
+            try {
+                setPreferencesFromResource( R.xml.pref_general, rootKey );
+                final EditTextPreference ipPreference =
+                        findPreference( getText( R.string.pref_ip_key ) );
+                final EditTextPreference portPreference =
+                        findPreference( getText( R.string.pref_port_key ) );
+                ipPreference.setSummary( ipPreference.getText() );
+                portPreference.setSummary( portPreference.getText() );
 
-            ipPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newVal) {
-                    ipPreference.setSummary(newVal.toString());
-                    return true;
-                }
-            });
+                ipPreference.setOnPreferenceChangeListener(
+                        new Preference.OnPreferenceChangeListener() {
+                    @Override
+                    public boolean onPreferenceChange(Preference preference, Object newVal) {
+                        ipPreference.setSummary(newVal.toString());
+                        return true;
+                    }
+                });
 
-            portPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newVal) {
-                    portPreference.setSummary(newVal.toString());
-                    return true;
-                }
-            });
+                portPreference.setOnPreferenceChangeListener(
+                        new Preference.OnPreferenceChangeListener() {
+                    @Override
+                    public boolean onPreferenceChange(Preference preference, Object newVal) {
+                        portPreference.setSummary(newVal.toString());
+                        return true;
+                    }
+                });
+            } catch ( NullPointerException e ) {
+                Log.d( LOG_TAG, e.getMessage() );
+            }
         }
     }
 }
