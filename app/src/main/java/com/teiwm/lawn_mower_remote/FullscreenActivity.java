@@ -1,19 +1,13 @@
-package com.teiwm.lawnmowerremote;
+package com.teiwm.lawn_mower_remote;
 
 import android.annotation.SuppressLint;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.net.wifi.WifiManager;
 import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -35,9 +29,7 @@ import io.github.controlwear.virtual.joystick.android.JoystickView;
  * status bar and navigation/system bar) with user interaction.
  */
 public class FullscreenActivity extends AppCompatActivity {
-    private static String LOG_TAG = "RPI client app";
-    private TCPClient m_client = new TCPClient();
-    private EventForwarder m_mower = new EventForwarder();
+    private static final String LOG_TAG = "Mower client activity";
 
     /**
      * Whether or not the system UI should be auto-hidden after
@@ -58,58 +50,74 @@ public class FullscreenActivity extends AppCompatActivity {
     private static final int UI_ANIMATION_DELAY = 300;
 
     private View mContentView;
+    private Switch mBtnSwitchCut;
+    private JoystickView mJstckMoveVehicle;
+    private RangeSeekBar mBladeHeight;
+    private ActionBar mActionBar;
+    private TextView mSeekDescription;
+    private float mLastBladeHeight = 0;
+    private boolean mLastSwitchValue = false;
+    private int mIgnoredEventsCount = 0;
 
-    private Switch m_btn_switch_cut;
-    private JoystickView m_jstck_move_vehicle;
-    private RangeSeekBar m_blade_height;
-    private ActionBar m_ActionBar;
-    private TextView m_seek_description;
-
-    private IEventHandler m_OnConnect =  new IEventHandler() {
+    private final IEventHandler mOnConnected =  new IEventHandler() {
         @Override
         public void callback(Event event) {
             SetEnableControls( true );
-            PostToast( getString( R.string.msg_client_connected ) );
         }
     };
 
-    private IEventHandler m_OnDisconnect = new IEventHandler() {
+    private final IEventHandler mOnDisconnected = new IEventHandler() {
         @Override
-        public void callback(Event event) {
+        public void callback( Event event ) {
             SetEnableControls( false );
-            if ( event.getParams() != null )
-                PostToast( event.getParams().toString() );
-            else
-                PostToast( getString( R.string.msg_client_disconnected ) );
         }
     };
 
-    private BroadcastReceiver m_WifiStateReceiver = new BroadcastReceiver() {
+    private final IEventHandler mOnEventIgnored = new IEventHandler() {
         @Override
-        public void onReceive( Context context, Intent intent ) {
-            int WifiStateExtra = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE,
-                    WifiManager.WIFI_STATE_UNKNOWN);
-            switch ( WifiStateExtra ) {
-                case WifiManager.WIFI_STATE_ENABLED:
-                    DetectConnectivity ConnectRunnable = new DetectConnectivity();
-                    Thread DetectThread = new Thread(ConnectRunnable);
-                    DetectThread.start();
-                    break;
-                case WifiManager.WIFI_STATE_DISABLING:
-                    if (m_client.isConnected()) {
-                        m_client.Disconnect();
+        public void callback( Event event ) {
+            EventIgnored evnt = ( EventIgnored ) event;
+
+            switch ( evnt.getIgnoredEvent().getEventId() ) {
+                case EventSetProperty.id:
+                    PostToast( getString( R.string.msg_server_busy ) );
+                    EventSetProperty e = ( EventSetProperty ) evnt.getIgnoredEvent();
+                    switch ( e.getPropertyId() ) {
+                        case Mower_event_ids.property_ids.blade_rpm:
+                            mBtnSwitchCut.setChecked( mLastSwitchValue );
+                            break;
+                        case Mower_event_ids.property_ids.blade_height_mm:
+                            mBladeHeight.setProgress( mLastBladeHeight );
+                            break;
                     }
                     break;
-                case WifiManager.WIFI_STATE_DISABLED:
-                    ShowMessageBox(getString(R.string.msg_wifi_not_connected));
-                    break;
+                case EventMove.id:
+                    mJstckMoveVehicle.resetButtonPosition();
             }
+
+        }
+    };
+
+    private final IEventHandler mOnOk = new IEventHandler() {
+        @Override
+        public void callback( Event event ) {
+            mLastBladeHeight = mBladeHeight.getLeft();
+            mLastSwitchValue = mBtnSwitchCut.isChecked();
         }
     };
 
     @Override
     protected void onCreate( Bundle savedInstanceState ) {
         super.onCreate( savedInstanceState );
+
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+
+            @Override
+            public void uncaughtException(Thread arg0, Throwable arg1) {
+                EventDispatcher.getInstance().riseEvent( new EventFatalError() );
+                android.os.Process.killProcess( android.os.Process.myPid() );
+            }
+        });
 
         setContentView( R.layout.activity_fullscreen );
 
@@ -118,22 +126,16 @@ public class FullscreenActivity extends AppCompatActivity {
         mContentView.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick( View view ) {
-                if ( m_ActionBar.isShowing() ) {
+                if ( mActionBar.isShowing() ) {
                     // Hide UI first
-                    if ( m_ActionBar != null ) {
-                        m_ActionBar.hide();
+                    if ( mActionBar != null ) {
+                        mActionBar.hide();
                     }
 
                     // Schedule a runnable to remove the status and navigation bar after a delay
                     mHideHandler.removeCallbacks( mShowPart2Runnable );
                     mHideHandler.postDelayed( mHidePart2Runnable, UI_ANIMATION_DELAY );
 
-                    // Check for server connection
-                    if ( !m_client.isConnected() ) {
-                        DetectConnectivity ConnectRunnable = new DetectConnectivity();
-                        Thread DetectThread = new Thread(ConnectRunnable);
-                        DetectThread.start();
-                    }
                 } else {
                     // Show the system bar
                     mContentView.setSystemUiVisibility( View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -146,12 +148,13 @@ public class FullscreenActivity extends AppCompatActivity {
             }
         });
 
-        m_btn_switch_cut = findViewById(R.id.button_switch_cut);
-        m_jstck_move_vehicle = findViewById( R.id.joystickView);
-
-        m_ActionBar = getSupportActionBar();
-        m_blade_height = findViewById( R.id.seekbar_set_height);
-        m_seek_description = findViewById( R.id.seek_bar_description );
+        mBtnSwitchCut = findViewById(R.id.button_switch_cut);
+        mLastSwitchValue = mBtnSwitchCut.isChecked();
+        mJstckMoveVehicle = findViewById( R.id.joystickView );
+        mActionBar = getSupportActionBar();
+        mBladeHeight = findViewById( R.id.seekbar_set_height);
+        mLastBladeHeight = mBladeHeight.getMinProgress();
+        mSeekDescription = findViewById( R.id.seek_bar_description );
     }
 
     @Override
@@ -164,7 +167,7 @@ public class FullscreenActivity extends AppCompatActivity {
         delayedHide( 100 );
     }
 
-    public void PostToast(final String message) {
+    private void PostToast( final String message ) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -178,22 +181,49 @@ public class FullscreenActivity extends AppCompatActivity {
         super.onStart();
 
         SetEnableControls(false);
-
-        m_jstck_move_vehicle.setOnMoveListener(new JoystickView.OnMoveListener()
+        
+        mJstckMoveVehicle.setOnMoveListener(new JoystickView.OnMoveListener()
         {
             public void onMove( int angle, int strength ) {
-                m_mower.Move( angle, strength);
-            }
-        }, 200);
+                EventMove.Direction move_dir = EventMove.Direction.stop;
 
-        m_btn_switch_cut.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener() {
+                if ( angle >= 315 || angle <= 45 )
+                    move_dir = EventMove.Direction.right;
+                if ( angle > 45 && angle <= 135 )
+                    move_dir = EventMove.Direction.forward;
+                if ( angle > 135 && angle <= 225 )
+                    move_dir = EventMove.Direction.left;
+                if ( angle > 225 && angle <= 315 )
+                    move_dir = EventMove.Direction.backward;
+
+                EventDispatcher.getInstance().riseEvent( new EventMove( move_dir, strength ) );
+            }
+        }, 400);
+
+        mBtnSwitchCut.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ) {
-                m_mower.RunBlade( isChecked );
+                int rpm = 0;
+
+                if ( isChecked ) {
+                    SharedPreferences shared_pref =
+                            PreferenceManager.getDefaultSharedPreferences( getApplicationContext() );
+                    try {
+                        rpm = Integer.parseInt(shared_pref.getString(
+                                getString( R.string.pref_blade_speed_key ),
+                                getString( R.string.pref_blade_default_speed ) ) );
+                    } catch (NumberFormatException nfe) {
+                        Log.e( LOG_TAG, nfe.getMessage() );
+                        rpm = 3200;
+                    }
+                }
+                EventSetProperty event =
+                        new EventSetProperty( EventSetProperty.Properties.blade_rpm, rpm );
+                EventDispatcher.getInstance().riseEvent( event );
             }
         });
 
-        m_blade_height.setIndicatorTextDecimalFormat("0.0");
-        m_blade_height.setOnRangeChangedListener(new OnRangeChangedListener() {
+        mBladeHeight.setIndicatorTextDecimalFormat("0.0");
+        mBladeHeight.setOnRangeChangedListener(new OnRangeChangedListener() {
             float height = 0;
 
             @Override
@@ -207,7 +237,9 @@ public class FullscreenActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(RangeSeekBar view, boolean isLeft) {
-                m_mower.SetBladeHeight( height );
+                EventSetProperty event =
+                        new EventSetProperty( EventSetProperty.Properties.blade_height_mm, height );
+                EventDispatcher.getInstance().riseEvent( event );
             }
         });
     }
@@ -220,14 +252,8 @@ public class FullscreenActivity extends AppCompatActivity {
     private final View.OnTouchListener mDelayHideTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch( View view, MotionEvent motionEvent ) {
-            switch ( motionEvent.getAction() ) {
-                case MotionEvent.ACTION_DOWN:
-                    break;
-                case MotionEvent.ACTION_UP:
-                    view.performClick();
-                    break;
-                default:
-                    break;
+            if ( motionEvent.getAction() ==  MotionEvent.ACTION_UP ) {
+                view.performClick();
             }
             if ( AUTO_HIDE ) {
                 delayedHide( AUTO_HIDE_DELAY_MILLIS );
@@ -270,8 +296,8 @@ public class FullscreenActivity extends AppCompatActivity {
         @Override
         public void run() {
             // Hide UI first
-            if ( m_ActionBar != null ) {
-                m_ActionBar.hide();
+            if ( mActionBar != null ) {
+                mActionBar.hide();
             }
 
             // Schedule a runnable to remove the status and navigation bar after a delay
@@ -300,7 +326,8 @@ public class FullscreenActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected( MenuItem item ) {
         int id = item.getItemId();
         if ( id == R.id.action_settings ) {
-            Intent intent = new Intent(FullscreenActivity.this, SettingsActivity.class);
+            Intent intent = new Intent(FullscreenActivity.this,
+                    SettingsActivity.class);
             startActivity(intent);
             return true;
         }
@@ -311,44 +338,44 @@ public class FullscreenActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        EventDispatcher.getInstance().addEventListener(
-                Local_event_ids.tcp_event_ids.connected, m_OnConnect );
+        Intent intent = new Intent(this, MowerControlService.class);
+        startService(intent);
 
-        EventDispatcher.getInstance().addEventListener(
-                Local_event_ids.tcp_event_ids.disconnected, m_OnDisconnect );
 
-        IntentFilter intentFilter = new IntentFilter( WifiManager.WIFI_STATE_CHANGED_ACTION );
-        registerReceiver( m_WifiStateReceiver, intentFilter);
+        EventDispatcher.getInstance().addEventListener( EventConnected.id, mOnConnected );
+        EventDispatcher.getInstance().addEventListener( EventDisconnected.id, mOnDisconnected );
+        EventDispatcher.getInstance().addEventListener( EventIgnored.id, mOnEventIgnored );
+        EventDispatcher.getInstance().addEventListener( EventOk.id, mOnOk );
 
         // TODO: Add functionality to read settings value for enabling video feed.
 
-        SharedPreferences shared_pref = getSharedPreferences(getPackageName() +
-                "_preferences", MODE_PRIVATE );
+        SharedPreferences shared_pref =
+                PreferenceManager.getDefaultSharedPreferences( getApplicationContext() );
 
         if ( shared_pref.getBoolean( getString( R.string.pref_mirror_controls_key ),
                                     false) ) {
-            ((FrameLayout.LayoutParams) m_btn_switch_cut.getLayoutParams()).gravity =
+            ((FrameLayout.LayoutParams) mBtnSwitchCut.getLayoutParams()).gravity =
                     ( Gravity.BOTTOM | Gravity.START );
 
-            ((FrameLayout.LayoutParams) m_blade_height.getLayoutParams()).gravity =
+            ((FrameLayout.LayoutParams) mBladeHeight.getLayoutParams()).gravity =
                     ( Gravity.BOTTOM | Gravity.START );
 
-            ((FrameLayout.LayoutParams) m_seek_description.getLayoutParams()).gravity =
+            ((FrameLayout.LayoutParams) mSeekDescription.getLayoutParams()).gravity =
                     ( Gravity.TOP | Gravity.START );
 
-            ((FrameLayout.LayoutParams) m_jstck_move_vehicle.getLayoutParams()).gravity =
+            ((FrameLayout.LayoutParams) mJstckMoveVehicle.getLayoutParams()).gravity =
                     ( Gravity.BOTTOM | Gravity.END );
 
         } else {
-            ((FrameLayout.LayoutParams) m_jstck_move_vehicle.getLayoutParams()).gravity =
+            ((FrameLayout.LayoutParams) mJstckMoveVehicle.getLayoutParams()).gravity =
                     ( Gravity.BOTTOM | Gravity.START );
 
-            ((FrameLayout.LayoutParams) m_btn_switch_cut.getLayoutParams()).gravity =
+            ((FrameLayout.LayoutParams) mBtnSwitchCut.getLayoutParams()).gravity =
                     ( Gravity.BOTTOM | Gravity.END );
 
-            ((FrameLayout.LayoutParams) m_blade_height.getLayoutParams()).gravity =
+            ((FrameLayout.LayoutParams) mBladeHeight.getLayoutParams()).gravity =
                     ( Gravity.BOTTOM | Gravity.END );
-            ((FrameLayout.LayoutParams) m_seek_description.getLayoutParams()).gravity =
+            ((FrameLayout.LayoutParams) mSeekDescription.getLayoutParams()).gravity =
                     ( Gravity.TOP | Gravity.END );
         }
     }
@@ -357,20 +384,20 @@ public class FullscreenActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
 
-        unregisterReceiver(m_WifiStateReceiver);
-        EventDispatcher.getInstance().removeEventListener( m_OnConnect );
-        EventDispatcher.getInstance().removeEventListener( m_OnDisconnect );
+        Intent intent = new Intent(this, MowerControlService.class);
+        stopService(intent);
 
-        if ( m_client.isConnected() )
-            m_client.Disconnect();
+        EventDispatcher.getInstance().removeEventListener( mOnConnected );
+        EventDispatcher.getInstance().removeEventListener( mOnDisconnected );
+        EventDispatcher.getInstance().removeEventListener( mOnEventIgnored );
+        EventDispatcher.getInstance().removeEventListener( mOnOk );
     }
 
     @Override
     protected void onDestroy() {
-        if ( m_client.isConnected() )
-            m_client.Disconnect();
+       super.onDestroy();
 
-        super.onDestroy();
+       EventDispatcher.getInstance().removeAllListeners();
     }
 
    private void SetEnableControls(final boolean enabled) {
@@ -378,103 +405,30 @@ public class FullscreenActivity extends AppCompatActivity {
             @Override
             public void run() {
                 if ( enabled ) {
-                    m_btn_switch_cut.setEnabled( true );
-                    m_jstck_move_vehicle.setEnabled( true );
-                    m_jstck_move_vehicle.setButtonColor(
+                    mBtnSwitchCut.setEnabled( true );
+                    mJstckMoveVehicle.setEnabled( true );
+                    mJstckMoveVehicle.setButtonColor(
                             getResources().getColor( R.color.colorControlEnabled ) );
-                    m_jstck_move_vehicle.setBorderColor(
+                    mJstckMoveVehicle.setBorderColor(
                             getResources().getColor( R.color.colorControlEnabled ) );
-                    m_blade_height.setEnabled( true );
-                    m_blade_height.setStepsColor(
+                    mBladeHeight.setEnabled( true );
+                    mBladeHeight.setStepsColor(
                             getResources().getColor( R.color.colorControlEnabled ) );
 
                 } else {
-                    m_btn_switch_cut.setChecked( false );
-                    m_btn_switch_cut.setEnabled( false );
-                    m_jstck_move_vehicle.setEnabled( false );
-                    m_jstck_move_vehicle.setButtonColor(
+                    mBtnSwitchCut.setChecked( false );
+                    mBtnSwitchCut.setEnabled( false );
+                    mJstckMoveVehicle.setEnabled( false );
+                    mJstckMoveVehicle.setButtonColor(
                             getResources().getColor( R.color.colorControlDisabled ) );
-                    m_jstck_move_vehicle.setBorderColor(
+                    mJstckMoveVehicle.setBorderColor(
                             getResources().getColor( R.color.colorControlDisabled ) );
-                    m_blade_height.setEnabled( false );
-                    m_blade_height.setStepsColor(
+                    mBladeHeight.setEnabled( false );
+                    mBladeHeight.setStepsColor(
                             getResources().getColor( R.color.colorControlDisabled ) );
                 }
             }
         });
     }
-
-    private void ShowToast( String str ) {
-        Context context = getApplicationContext();
-
-        Toast toast = Toast.makeText( context, str, Toast.LENGTH_LONG );
-        toast.show();
-    }
-
-    private void ShowMessageBox( String str ) {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this );
-
-        // Add the buttons
-        builder.setPositiveButton( R.string.msg_box_ok, new DialogInterface.OnClickListener() {
-            public void onClick( DialogInterface dialog, int id ) {
-                dialog.dismiss();
-            }
-        });
-
-        // Create the AlertDialog
-        AlertDialog dialog = builder.create();
-        dialog.setMessage( str );
-        dialog.show();
-    }
-
-    public class DetectConnectivity implements Runnable {
-
-        ConnectivityManager cm
-                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-
-        SharedPreferences shared_pref = getSharedPreferences(getPackageName() +
-                "_preferences", MODE_PRIVATE );
-        final String ip = shared_pref.getString("key_settings_ip",
-                "@string/pref_default_ip_value");
-        int port;
-
-        public DetectConnectivity() {
-            try {
-                port = Integer.parseInt(shared_pref.getString("key_settings_port",
-                        "@string/pref_default_port_value"));
-                if (port == 0)
-                    port = 8080;
-
-            } catch (NumberFormatException nfe) {
-                ShowToast(getString(R.string.msg_wrong_wifi_port));
-                port = 8080;
-            }
-        }
-
-        @Override
-        public void run() {
-            boolean connected = false;
-            int tries = 0;
-            while ( !connected && ( tries <= 4 ) ) {
-                NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-                connected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-
-                if ( connected ) {
-                     m_client.Connect( ip, port );
-                }
-                try {
-                    Thread.sleep( 2000 );
-                } catch ( InterruptedException e ) {
-                    e.printStackTrace( System.err );
-                }
-                tries++;
-            }
-            if ( !connected ) {
-                ShowMessageBox( getString( R.string.msg_wifi_not_connected ) );
-            }
-        }
-    }
-
-
 }
 

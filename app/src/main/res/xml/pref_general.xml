@@ -32,7 +32,6 @@
             android:singleLine="true"
             android:defaultValue="3200"
             android:digits="@string/pref_text_port_digits"
-            android:summary="@string/pref_blade_speed_sumary"
             android:title="@string/pref_blade_speed_title" />
     </PreferenceCategory>
 

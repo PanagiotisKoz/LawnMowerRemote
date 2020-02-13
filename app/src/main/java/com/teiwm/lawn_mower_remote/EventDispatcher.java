@@ -1,17 +1,17 @@
-package com.teiwm.lawnmowerremote;
+package com.teiwm.lawn_mower_remote;
 
+import android.util.Log;
 import android.util.SparseArray;
-
 import java.util.ArrayList;
 
 public class EventDispatcher implements IEventDispatcher {
-    private static EventDispatcher ourInstance = new EventDispatcher();
+    private static final EventDispatcher ourInstance = new EventDispatcher();
 
     public static EventDispatcher getInstance() {
         return ourInstance;
     }
 
-    private SparseArray< ArrayList< Listener > > listeners = new SparseArray<>();
+    private final SparseArray< ArrayList< Listener > > listeners = new SparseArray<>();
 
     public void addEventListener( int type, IEventHandler handler ) {
         ArrayList< Listener > listenersList = listeners.get( type );
@@ -36,8 +36,13 @@ public class EventDispatcher implements IEventDispatcher {
         }
     }
 
-    public void dispatchEvent( Event event ) {
+    public void riseEvent( Event event ) {
         ArrayList< Listener > listenersList = listeners.get( event.getEventId() );
+
+        if( listenersList == null ) {
+            Log.w( "Event dispatcher", "Event " + event.getEventId() + " ignored." );
+            return;
+        }
 
         for( Listener listener : listenersList ) {
             IEventHandler eventHandler = listener.getHandler();

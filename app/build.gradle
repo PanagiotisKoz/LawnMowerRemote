@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 28
     defaultConfig {
-        applicationId "com.teiwm.lawnmowerremote"
+        applicationId "com.teiwm.lawn_mower_remote"
         minSdkVersion 17
         targetSdkVersion 28
         versionCode 1
@@ -20,12 +20,12 @@ android {
 }
 
 dependencies {
-    def version = "1.1.0"
+
     def seek_bar_version = "v3.0.0"
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "androidx.appcompat:appcompat:$version"
-    implementation "androidx.core:core:$version"
-    implementation "androidx.fragment:fragment:$version"
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.core:core:1.2.0'
+    implementation 'androidx.fragment:fragment:1.2.1'
     implementation 'androidx.preference:preference:1.1.0'
     implementation 'org.jetbrains:annotations-java5:15.0'
     implementation 'io.github.controlwear:virtualjoystick:1.10.1'

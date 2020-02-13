@@ -1,10 +1,9 @@
-package com.teiwm.lawnmowerremote;
+package com.teiwm.lawn_mower_remote;
 
-public interface IEventDispatcher {
+interface IEventDispatcher {
 
     void addEventListener( int type, IEventHandler cbInterface );
     void removeEventListener( IEventHandler handler );
-    void dispatchEvent( Event event );
+    void riseEvent( Event event );
     void removeAllListeners();
-
 }

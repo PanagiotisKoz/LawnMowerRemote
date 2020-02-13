@@ -10,14 +10,15 @@
     <string name="seek_bar_description">Blade height</string>
 
     <!-- Information messages -->
-    <string name="msg_wifi_not_connected">This app requires wi-fi connection.
-                                          Please connect to an access point before it is used.</string>
-    <string name="msg_client_connected">Connected to RPi server.</string>
-    <string name="msg_client_disconnected">Connection closed by server.</string>
-    <string name="msg_wrong_wifi_port">Something wrong with port number.\n
-                                        We force to use 8080.</string>
-    <string name="msg_box_ok">OK</string>
+    <string name="msg_wifi_not_connected">This app requires wi-fi connection.</string>
+    <string name="msg_client_connected">Connected to mower.</string>
+    <string name="msg_wrong_max_speed">Accepted speeds are between\n500\-3500 rpm.</string>
+    <string name="msg_server_busy">Mower is busy.</string>
     <!-- End of strings related to MainApp -->
+
+    <!-- String related to notifications -->
+    <string name="notification_channel_name">Mower connection status</string>
+    <string name="notification_channel_description">Enable/Disable notifications on status bar.</string>
 
     <!-- Strings related to Settings -->
     <!-- Strings ralated to ip address settings -->
@@ -32,10 +33,10 @@
     <string name="pref_default_port_value">8080</string>
     <string name="pref_text_port_digits">0123456789</string>
 
-    <!-- Strings ralated to blade height -->
+    <!-- Strings ralated to blade -->
     <string name="pref_blade_speed_key">blade_speed</string>
+    <string name="pref_blade_default_speed">3200</string>
     <string name="pref_blade_speed_title">Blade speed (rpm).</string>
-    <string name="pref_blade_speed_sumary">Set blade cutting speed in rpm.</string>
 
     <!-- Strings ralated to video settings -->
     <string name="pref_video_feed_key">remote_video_feed</string>

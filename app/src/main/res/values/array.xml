@@ -6,12 +6,12 @@
         <item>720*440</item>
     </string-array>
     <string-array name="seekBarArray">
-        <item>0mm</item>
-        <item>10mm</item>
-        <item>20mm</item>
         <item>30mm</item>
         <item>40mm</item>
         <item>50mm</item>
         <item>60mm</item>
+        <item>70mm</item>
+        <item>80mm</item>
+        <item>90mm</item>
     </string-array>
 </resources>

@@ -10,4 +10,6 @@
 
     <color name="colorControlEnabled">#62B409</color>
     <color name="colorControlDisabled">#bebeba</color>
+
+    <color name="ic_launcher_background">#68D102</color>
 </resources>

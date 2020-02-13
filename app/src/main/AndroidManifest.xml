@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.teiwm.lawnmowerremote">
+    package="com.teiwm.lawn_mower_remote">
 
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
         android:allowBackup="true"
@@ -16,7 +17,7 @@
         android:theme="@style/AppTheme">
 
         <activity
-            android:name=".FullscreenActivity"
+            android:name="com.teiwm.lawn_mower_remote.FullscreenActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
             android:screenOrientation="landscape"
@@ -41,13 +42,17 @@
         </activity>
 
         <activity
-            android:name=".SettingsActivity"
+            android:name="com.teiwm.lawn_mower_remote.SettingsActivity"
             android:label="@string/title_activity_settings"
-            android:parentActivityName=".FullscreenActivity">
+            android:parentActivityName="com.teiwm.lawn_mower_remote.FullscreenActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".FullscreenActivity" />
+                android:value="com.teiwm.lawn_mower_remote.FullscreenActivity" />
         </activity>
+        <service
+            android:name="com.teiwm.lawn_mower_remote.MowerControlService"
+            android:enabled="true"
+            android:exported="false"/>
     </application>
 
 </manifest>
