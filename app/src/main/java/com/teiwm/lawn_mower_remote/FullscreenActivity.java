@@ -29,25 +29,25 @@ import io.github.controlwear.virtual.joystick.android.JoystickView;
  * status bar and navigation/system bar) with user interaction.
  */
 public class FullscreenActivity extends AppCompatActivity {
-    private static final String LOG_TAG = "Mower client activity";
+    private final String LOG_TAG = "Mower client activity";
 
     /**
      * Whether or not the system UI should be auto-hidden after
      * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
      */
-    private static final boolean AUTO_HIDE = true;
+    private final boolean AUTO_HIDE = true;
 
     /**
      * If {@link #AUTO_HIDE} is set, the number of milliseconds to wait after
      * user interaction before hiding the system UI.
      */
-    private static final int AUTO_HIDE_DELAY_MILLIS = 3000;
+    private final int AUTO_HIDE_DELAY_MILLIS = 3000;
 
     /**
      * Some older devices needs a small delay between UI widget updates
      * and a change of the status and navigation bar.
      */
-    private static final int UI_ANIMATION_DELAY = 300;
+    private final int UI_ANIMATION_DELAY = 300;
 
     private View mContentView;
     private Switch mBtnSwitchCut;
@@ -57,7 +57,6 @@ public class FullscreenActivity extends AppCompatActivity {
     private TextView mSeekDescription;
     private float mLastBladeHeight = 0;
     private boolean mLastSwitchValue = false;
-    private int mIgnoredEventsCount = 0;
 
     private final IEventHandler mOnConnected =  new IEventHandler() {
         @Override
