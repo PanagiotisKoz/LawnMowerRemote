@@ -377,6 +377,8 @@ public class FullscreenActivity extends AppCompatActivity {
             ((FrameLayout.LayoutParams) mSeekDescription.getLayoutParams()).gravity =
                     ( Gravity.TOP | Gravity.END );
         }
+
+        this.mContentView.invalidate();
     }
 
     @Override
