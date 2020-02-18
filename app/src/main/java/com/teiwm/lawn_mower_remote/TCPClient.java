@@ -139,7 +139,7 @@ class TCPClient {
      * @return Boolean
      */
     public boolean isConnected() {
-        return mConnectionSocket != null && mConnectionSocket.isConnected() && !mConnectionSocket.isClosed();
+        return mConnectionSocket.isConnected() && !mConnectionSocket.isClosed();
     }
 
     public void connect( String ip, int port ){
