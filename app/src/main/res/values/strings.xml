@@ -12,7 +12,7 @@
     <!-- Information messages -->
     <string name="msg_wifi_not_connected">This app requires wi-fi connection.</string>
     <string name="msg_client_connected">Connected to mower.</string>
-    <string name="msg_wrong_max_speed">Accepted speeds are between\n500\-3500 rpm.</string>
+    <string name="msg_wrong_max_speed">Accepted speeds are between\n500\-2500 rpm.</string>
     <string name="msg_server_busy">Mower is busy.</string>
     <!-- End of strings related to MainApp -->
 
@@ -35,7 +35,7 @@
 
     <!-- Strings ralated to blade -->
     <string name="pref_blade_speed_key">blade_speed</string>
-    <string name="pref_blade_default_speed">3200</string>
+    <string name="pref_blade_default_speed">2500</string>
     <string name="pref_blade_speed_title">Blade speed (rpm).</string>
 
     <!-- Strings ralated to video settings -->

@@ -152,7 +152,8 @@ public class FullscreenActivity extends AppCompatActivity {
         mJstckMoveVehicle = findViewById( R.id.joystickView );
         mActionBar = getSupportActionBar();
         mBladeHeight = findViewById( R.id.seekbar_set_height);
-        mLastBladeHeight = mBladeHeight.getMinProgress();
+        mLastBladeHeight = mBladeHeight.getMaxProgress();
+        mBladeHeight.setProgress( mLastBladeHeight );
         mSeekDescription = findViewById( R.id.seek_bar_description );
     }
 

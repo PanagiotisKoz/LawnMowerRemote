@@ -140,7 +140,12 @@ public class MowerControlService extends Service {
             return;
 
         String[] tokens = response.split( " " );
-        int mowerState = Integer.parseInt( tokens[0] );
+        int mowerState;
+        try {
+            mowerState = Integer.parseInt( tokens[ 0 ] );
+        } catch ( NumberFormatException e ) {
+            mowerState = Mower_event_ids.mower_response_ids.command_unknow;
+        }
 
         switch( mowerState ) {
             case Mower_event_ids.mower_response_ids.ok:

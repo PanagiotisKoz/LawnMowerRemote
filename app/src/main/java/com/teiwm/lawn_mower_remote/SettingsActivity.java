@@ -67,7 +67,7 @@ public class SettingsActivity extends AppCompatActivity {
                     @Override
                     public boolean onPreferenceChange( Preference preference, Object newValue ) {
                         int val = Integer.parseInt( newValue.toString() );
-                        if ( val > 3500 || val < 500 ) {
+                        if ( val > 2500 || val < 500 ) {
                            Toast.makeText( getActivity().getBaseContext(),
                                    getString( R.string.msg_wrong_max_speed ),
                                    Toast.LENGTH_LONG ).show();

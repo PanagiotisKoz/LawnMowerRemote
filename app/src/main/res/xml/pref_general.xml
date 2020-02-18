@@ -30,7 +30,7 @@
             android:selectAllOnFocus="true"
             android:inputType="number"
             android:singleLine="true"
-            android:defaultValue="3200"
+            android:defaultValue="@string/pref_blade_default_speed"
             android:digits="@string/pref_text_port_digits"
             android:title="@string/pref_blade_speed_title" />
     </PreferenceCategory>
