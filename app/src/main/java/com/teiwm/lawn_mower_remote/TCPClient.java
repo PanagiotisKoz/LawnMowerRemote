@@ -59,8 +59,6 @@ class TCPClient {
 
         @Override
         public void run() {
-            if( mReceiveThread != null )
-                mReceiveThread.interrupt();
             try {
                 OutputStream out = mConnectionSocket.getOutputStream();
                 out.write( mData, 0, mData.length );
@@ -70,7 +68,6 @@ class TCPClient {
                 disconnect( e.getMessage() );
                 Log.e ( LOG_TAG, e.getMessage() );
             }
-            startReceiving(); //Start the receiving thread if it's not already running
         }
     }
 

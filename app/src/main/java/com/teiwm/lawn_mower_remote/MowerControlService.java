@@ -28,7 +28,7 @@ public class MowerControlService extends Service {
 
     // Prevent sending same data over and over again.
     private final TCPClient mClient = new TCPClient();
-    private boolean mServerOk = false; // If server is up and execute command without errors is true.
+    private boolean mServerOk = true; // If server is up and execute command without errors is true.
     private Thread mConnectivityThread;
     private String mLastCommand = "";
 

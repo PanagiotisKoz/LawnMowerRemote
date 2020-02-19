@@ -389,6 +389,10 @@ public class FullscreenActivity extends AppCompatActivity {
         Intent intent = new Intent(this, MowerControlService.class);
         stopService(intent);
 
+        mJstckMoveVehicle.resetButtonPosition();
+        mBtnSwitchCut.setChecked( false );
+        mBladeHeight.setProgress( mBladeHeight.getMaxProgress() );
+        mContentView.invalidate();
         EventDispatcher.getInstance().removeEventListener( mOnConnected );
         EventDispatcher.getInstance().removeEventListener( mOnDisconnected );
         EventDispatcher.getInstance().removeEventListener( mOnEventIgnored );
