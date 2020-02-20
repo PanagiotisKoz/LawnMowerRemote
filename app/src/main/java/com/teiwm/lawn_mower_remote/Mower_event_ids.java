@@ -6,7 +6,6 @@ class Mower_event_ids {
         public static final int property_get = 30;
         public static final int property_set = 31;
         public static final int move = 40;
-        public static final int shutdown = 10000;
     }
 
     public class mower_response_ids {
@@ -21,7 +20,10 @@ class Mower_event_ids {
         public static final int backward = 101;
         public static final int left = 102;
         public static final int right = 103;
-        public static final int stop = 104;
+        public static final int fr = 104;
+        public static final int fl = 105;
+        public static final int br = 106;
+        public static final int bl = 107;
     }
 
     public class property_ids {

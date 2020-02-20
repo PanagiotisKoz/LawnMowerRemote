@@ -67,7 +67,10 @@ class EventMove extends Event {
         backward,
         left,
         right,
-        stop
+        fr,
+        fl,
+        br,
+        bl
     }
 
     public EventMove ( Direction direction, int power ) {
@@ -91,8 +94,18 @@ class EventMove extends Event {
             case right:
                 id = Mower_event_ids.move_ids.right;
                 break;
-            case stop:
-                id = Mower_event_ids.move_ids.stop;
+            case fr:
+                id = Mower_event_ids.move_ids.fr;
+                break;
+            case fl:
+                id = Mower_event_ids.move_ids.fl;
+                break;
+            case br:
+                id = Mower_event_ids.move_ids.br;
+                break;
+            case bl:
+                id = Mower_event_ids.move_ids.bl;
+                break;
         }
         return id;
     }

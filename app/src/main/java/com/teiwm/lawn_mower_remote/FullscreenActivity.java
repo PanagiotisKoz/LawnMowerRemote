@@ -68,6 +68,18 @@ public class FullscreenActivity extends AppCompatActivity {
     private final IEventHandler mOnDisconnected = new IEventHandler() {
         @Override
         public void callback( Event event ) {
+            if ( mBtnSwitchCut.isChecked() ) {
+                runOnUiThread( new Runnable() {
+                    @Override
+                    public void run() {
+                        mBtnSwitchCut.setChecked( false );
+                    }
+                } );
+            }
+
+            mJstckMoveVehicle.resetButtonPosition();
+            mBladeHeight.setProgress( mBladeHeight.getMaxProgress() );
+            mContentView.invalidate();
             SetEnableControls( false );
         }
     };
@@ -93,14 +105,14 @@ public class FullscreenActivity extends AppCompatActivity {
                 case EventMove.id:
                     mJstckMoveVehicle.resetButtonPosition();
             }
-
+            mContentView.invalidate();
         }
     };
 
     private final IEventHandler mOnOk = new IEventHandler() {
         @Override
         public void callback( Event event ) {
-            mLastBladeHeight = mBladeHeight.getLeft();
+            mLastBladeHeight = mBladeHeight.getLeftSeekBar().getProgress();
             mLastSwitchValue = mBtnSwitchCut.isChecked();
         }
     };
@@ -185,16 +197,25 @@ public class FullscreenActivity extends AppCompatActivity {
         mJstckMoveVehicle.setOnMoveListener(new JoystickView.OnMoveListener()
         {
             public void onMove( int angle, int strength ) {
-                EventMove.Direction move_dir = EventMove.Direction.stop;
+                EventMove.Direction move_dir = EventMove.Direction.forward;
 
-                if ( angle >= 315 || angle <= 45 )
+                if ( angle > 340 || angle <= 20 )
                     move_dir = EventMove.Direction.right;
-                if ( angle > 45 && angle <= 135 )
-                    move_dir = EventMove.Direction.forward;
-                if ( angle > 135 && angle <= 225 )
+                if ( angle > 20 && angle <= 70 )
+                    move_dir = EventMove.Direction.fr;
+                /* Not check this because already set.
+                if ( angle > 70 && angle <= 110 )
+                    move_dir = EventMove.Direction.forward;*/
+                if ( angle > 110 && angle <= 160 )
+                    move_dir = EventMove.Direction.fl;
+                if ( angle > 160 && angle <= 200 )
                     move_dir = EventMove.Direction.left;
-                if ( angle > 225 && angle <= 315 )
+                if ( angle > 200 && angle <= 250 )
+                    move_dir = EventMove.Direction.bl;
+                if ( angle > 250 && angle <= 290 )
                     move_dir = EventMove.Direction.backward;
+                if ( angle > 290 && angle <= 340 )
+                    move_dir = EventMove.Direction.br;
 
                 EventDispatcher.getInstance().riseEvent( new EventMove( move_dir, strength ) );
             }
@@ -389,10 +410,6 @@ public class FullscreenActivity extends AppCompatActivity {
         Intent intent = new Intent(this, MowerControlService.class);
         stopService(intent);
 
-        mJstckMoveVehicle.resetButtonPosition();
-        mBtnSwitchCut.setChecked( false );
-        mBladeHeight.setProgress( mBladeHeight.getMaxProgress() );
-        mContentView.invalidate();
         EventDispatcher.getInstance().removeEventListener( mOnConnected );
         EventDispatcher.getInstance().removeEventListener( mOnDisconnected );
         EventDispatcher.getInstance().removeEventListener( mOnEventIgnored );

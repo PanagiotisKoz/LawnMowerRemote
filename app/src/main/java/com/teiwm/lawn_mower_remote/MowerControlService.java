@@ -22,13 +22,17 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import java.sql.Time;
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class MowerControlService extends Service {
     private final String mNotifyChannelId = "Mower_notify_channel_01";
     private final String LOG_TAG = "Mower service";
 
     // Prevent sending same data over and over again.
     private final TCPClient mClient = new TCPClient();
-    private boolean mServerOk = true; // If server is up and execute command without errors is true.
+    private boolean mServerOk = false; // If server is up and execute command without errors is true.
     private Thread mConnectivityThread;
     private String mLastCommand = "";
 
