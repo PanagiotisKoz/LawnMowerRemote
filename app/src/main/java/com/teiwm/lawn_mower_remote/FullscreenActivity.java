@@ -6,10 +6,9 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.MenuInflater;
 import android.view.Menu;
@@ -17,11 +16,15 @@ import android.view.MenuItem;
 import android.content.Intent;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.jaygoo.widget.OnRangeChangedListener;
 import com.jaygoo.widget.RangeSeekBar;
+
+import java.util.TimerTask;
+
 import io.github.controlwear.virtual.joystick.android.JoystickView;
 
 /**
@@ -55,8 +58,18 @@ public class FullscreenActivity extends AppCompatActivity {
     private RangeSeekBar mBladeHeight;
     private ActionBar mActionBar;
     private TextView mSeekDescription;
+    private ImageView mBattIcon;
+    private TextView mBattPwrValue;
     private float mLastBladeHeight = 0;
     private boolean mLastSwitchValue = false;
+
+    private TimerTask mUpdateBattValue = new TimerTask() {
+        @Override
+        public void run() {
+            EventDispatcher.getInstance().riseEvent(
+                    new EventGetProperty( EventGetProperty.Properties.voltage ) );
+        }
+    };
 
     private final IEventHandler mOnConnected =  new IEventHandler() {
         @Override
@@ -69,6 +82,52 @@ public class FullscreenActivity extends AppCompatActivity {
         @Override
         public void callback( Event event ) {
             SetEnableControls( false );
+        }
+    };
+
+    private final IEventHandler mOnCharge = new IEventHandler() {
+        @Override
+        public void callback( Event event ) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mBtnSwitchCut.setChecked( false );
+                    mBladeHeight.setProgress( mBladeHeight.getMaxProgress() );
+                    mBattIcon.setImageResource( R.drawable.ic_battery_charging_full_black_24dp );
+                    mBattPwrValue.setText( getString( R.string.msg_batt_charging ) );
+                    mContentView.invalidate();
+                }
+            });
+
+            SetEnableControls( false );
+        }
+    };
+
+    private final IEventHandler mOnPropertyReturn = new IEventHandler() {
+        @Override
+        public void callback(Event event) {
+            final EventPropertyReturn evnt = ( EventPropertyReturn ) event;
+
+            switch ( evnt.getProperty() ) {
+                case batt_percentage:
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            SetEnableControls( true );
+                            SetBattIcon( evnt.getmValue() );
+                        }
+                    });
+                    break;
+                case none:
+                    mBattPwrValue.post( new Runnable() {
+                        @Override
+                        public void run() {
+                            mBattIcon.setImageResource( R.drawable.ic_battery_unknown_black_24dp );
+                            mBattPwrValue.setText( getString( R.string.msg_batt_unknow ) );
+                        }
+                    });
+                    break;
+            }
         }
     };
 
@@ -148,6 +207,8 @@ public class FullscreenActivity extends AppCompatActivity {
         });
 
         mBtnSwitchCut = findViewById(R.id.button_switch_cut);
+        mBattIcon = findViewById( R.id.battery_info_icon );
+        mBattPwrValue = findViewById( R.id.batt_info_value );
         mLastSwitchValue = mBtnSwitchCut.isChecked();
         mJstckMoveVehicle = findViewById( R.id.joystickView );
         mActionBar = getSupportActionBar();
@@ -244,24 +305,6 @@ public class FullscreenActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Touch listener to use for in-layout UI controls to delay hiding the
-     * system UI. This is to prevent the jarring behavior of controls going away
-     * while interacting with activity UI.
-     */
-    private final View.OnTouchListener mDelayHideTouchListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch( View view, MotionEvent motionEvent ) {
-            if ( motionEvent.getAction() ==  MotionEvent.ACTION_UP ) {
-                view.performClick();
-            }
-            if ( AUTO_HIDE ) {
-                delayedHide( AUTO_HIDE_DELAY_MILLIS );
-            }
-            return false;
-        }
-    };
-
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint( "InlinedApi" )
         @Override
@@ -344,6 +387,8 @@ public class FullscreenActivity extends AppCompatActivity {
 
         EventDispatcher.getInstance().addEventListener( EventConnected.id, mOnConnected );
         EventDispatcher.getInstance().addEventListener( EventDisconnected.id, mOnDisconnected );
+        EventDispatcher.getInstance().addEventListener( EventPropertyReturn.id, mOnPropertyReturn );
+        EventDispatcher.getInstance().addEventListener( EventBattCharging.id, mOnCharge );
         EventDispatcher.getInstance().addEventListener( EventIgnored.id, mOnEventIgnored );
         EventDispatcher.getInstance().addEventListener( EventOk.id, mOnOk );
 
@@ -395,6 +440,8 @@ public class FullscreenActivity extends AppCompatActivity {
         mContentView.invalidate();
         EventDispatcher.getInstance().removeEventListener( mOnConnected );
         EventDispatcher.getInstance().removeEventListener( mOnDisconnected );
+        EventDispatcher.getInstance().removeEventListener( mOnPropertyReturn );
+        EventDispatcher.getInstance().removeEventListener( mOnCharge );
         EventDispatcher.getInstance().removeEventListener( mOnEventIgnored );
         EventDispatcher.getInstance().removeEventListener( mOnOk );
     }
@@ -435,6 +482,27 @@ public class FullscreenActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void SetBattIcon( int value ) {
+        mBattPwrValue.setText( value + "%" );
+
+        if ( value <= 10 )
+            mBattIcon.setImageResource( R.drawable.ic_battery_alert_red_24dp );
+        else if ( value < 25 )
+            mBattIcon.setImageResource( R.drawable.ic_battery_20_black_24dp );
+        else if ( value < 35 )
+            mBattIcon.setImageResource( R.drawable.ic_battery_30_black_24dp );
+        else if ( value < 55 )
+            mBattIcon.setImageResource( R.drawable.ic_battery_50_black_24dp );
+        else if ( value < 65 )
+            mBattIcon.setImageResource( R.drawable.ic_battery_60_black_24dp );
+        else if ( value < 85 )
+            mBattIcon.setImageResource( R.drawable.ic_battery_80_black_24dp );
+        else if ( value < 95 )
+            mBattIcon.setImageResource( R.drawable.ic_battery_90_black_24dp );
+        else
+            mBattIcon.setImageResource( R.drawable.ic_battery_full_black_24dp );
     }
 }
 

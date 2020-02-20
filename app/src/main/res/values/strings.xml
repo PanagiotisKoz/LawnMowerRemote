@@ -9,7 +9,10 @@
     <string name="button_switch_cut">Cut</string>
     <string name="seek_bar_description">Blade height</string>
 
-    <!-- Information messages -->
+    <!-- Battery messages -->
+    <string name="msg_batt_unknow">\?\%</string>
+    <string name="msg_batt_charging">You cannot use app while charging.</string>
+    <!-- Information messages (Toast)-->
     <string name="msg_wifi_not_connected">This app requires wi-fi connection.</string>
     <string name="msg_client_connected">Connected to mower.</string>
     <string name="msg_wrong_max_speed">Accepted speeds are between\n500\-2500 rpm.</string>

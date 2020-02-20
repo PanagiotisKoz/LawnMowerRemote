@@ -87,4 +87,27 @@
         android:text="@string/seek_bar_description"
         android:textColor="@color/colorText"
         android:textSize="18sp" />
+
+    <ImageView
+        android:id="@+id/battery_info_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="10dp"
+        android:adjustViewBounds="true"
+        android:maxWidth="30dp"
+        android:maxHeight="30dp"
+        android:scaleType="centerInside"
+        custom:srcCompat="@drawable/ic_battery_unknown_black_24dp" />
+
+    <TextView
+        android:id="@+id/batt_info_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="12dp"
+        android:text="@string/msg_batt_unknow"
+        android:textColor="@color/colorText" />
 </FrameLayout>
