@@ -21,7 +21,10 @@ class Mower_event_ids {
         static final int backward = 101;
         static final int left = 102;
         static final int right = 103;
-        static final int stop = 104;
+        static final int fr = 104;
+        static final int fl = 105;
+        static final int br = 106;
+        static final int bl = 107;
     }
 
     class property_ids {

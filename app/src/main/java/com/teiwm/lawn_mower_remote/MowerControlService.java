@@ -285,6 +285,7 @@ public class MowerControlService extends Service {
 
         EventDispatcher.getInstance().addEventListener( EventMove.id, mOnMove );
         EventDispatcher.getInstance().addEventListener( EventSetProperty.id, mOnSetProperty );
+        EventDispatcher.getInstance().addEventListener( EventGetProperty.id, mOnGetProperty );
         EventDispatcher.getInstance().addEventListener( EventFatalError.id, mOnFatalError );
     }
 
@@ -295,6 +296,8 @@ public class MowerControlService extends Service {
 
         EventDispatcher.getInstance().removeEventListener( mOnMove );
         EventDispatcher.getInstance().removeEventListener( mOnSetProperty );
+        EventDispatcher.getInstance().removeEventListener( mOnGetProperty );
+        EventDispatcher.getInstance().removeEventListener( mOnFatalError );
 
         NotificationManagerCompat nm = NotificationManagerCompat.from(this);
         nm.deleteNotificationChannel( mNotifyChannelId );

@@ -23,7 +23,9 @@ import android.widget.Toast;
 import com.jaygoo.widget.OnRangeChangedListener;
 import com.jaygoo.widget.RangeSeekBar;
 
+import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import io.github.controlwear.virtual.joystick.android.JoystickView;
 
@@ -35,17 +37,9 @@ public class FullscreenActivity extends AppCompatActivity {
     private final String LOG_TAG = "Mower client activity";
 
     /**
-     * Whether or not the system UI should be auto-hidden after
-     * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
+     * Battery update status intervals in minutes.
      */
-    private final boolean AUTO_HIDE = true;
-
-    /**
-     * If {@link #AUTO_HIDE} is set, the number of milliseconds to wait after
-     * user interaction before hiding the system UI.
-     */
-    private final int AUTO_HIDE_DELAY_MILLIS = 3000;
-
+    private final int BATT_UPDATE_INTERVALL = 1;
     /**
      * Some older devices needs a small delay between UI widget updates
      * and a change of the status and navigation bar.
@@ -63,55 +57,54 @@ public class FullscreenActivity extends AppCompatActivity {
     private float mLastBladeHeight = 0;
     private boolean mLastSwitchValue = false;
 
+    private Timer mScheduler = new Timer( false );
     private TimerTask mUpdateBattValue = new TimerTask() {
         @Override
         public void run() {
             EventDispatcher.getInstance().riseEvent(
-                    new EventGetProperty( EventGetProperty.Properties.voltage ) );
+                    new EventGetProperty( EventGetProperty.Properties.batt_percentance ) );
         }
     };
 
     private final IEventHandler mOnConnected =  new IEventHandler() {
         @Override
         public void callback(Event event) {
-            SetEnableControls( true );
+            setEnableControls( true );
+            mScheduler.schedule( mUpdateBattValue, 0, TimeUnit.MINUTES.toMillis( BATT_UPDATE_INTERVALL ) );
         }
     };
 
     private final IEventHandler mOnDisconnected = new IEventHandler() {
         @Override
         public void callback( Event event ) {
-            if ( mBtnSwitchCut.isChecked() ) {
-                runOnUiThread( new Runnable() {
-                    @Override
-                    public void run() {
-                        mBtnSwitchCut.setChecked( false );
-                    }
-                } );
-            }
-
-            mJstckMoveVehicle.resetButtonPosition();
-            mBladeHeight.setProgress( mBladeHeight.getMaxProgress() );
-            mContentView.invalidate();
-            SetEnableControls( false );
+            resetControls();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mBattIcon.setImageResource( R.drawable.ic_battery_unknown_black_24dp );
+                    mBattPwrValue.setText( getString( R.string.msg_batt_unknow ) );
+                    mContentView.invalidate();
+                }
+            });
+            setEnableControls( false );
+            mScheduler.cancel();
         }
     };
 
     private final IEventHandler mOnCharge = new IEventHandler() {
         @Override
         public void callback( Event event ) {
-            runOnUiThread(new Runnable() {
+            resetControls();
+
+            runOnUiThread( new Runnable() {
                 @Override
                 public void run() {
-                    mBtnSwitchCut.setChecked( false );
-                    mBladeHeight.setProgress( mBladeHeight.getMaxProgress() );
                     mBattIcon.setImageResource( R.drawable.ic_battery_charging_full_black_24dp );
                     mBattPwrValue.setText( getString( R.string.msg_batt_charging ) );
-                    mContentView.invalidate();
                 }
             });
 
-            SetEnableControls( false );
+            setEnableControls( false );
         }
     };
 
@@ -122,16 +115,11 @@ public class FullscreenActivity extends AppCompatActivity {
 
             switch ( evnt.getProperty() ) {
                 case batt_percentage:
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            SetEnableControls( true );
-                            SetBattIcon( evnt.getmValue() );
-                        }
-                    });
+                    setEnableControls( true );
+                    setBattIcon( evnt.getmValue() );
                     break;
                 case none:
-                    mBattPwrValue.post( new Runnable() {
+                    runOnUiThread(  new Runnable() {
                         @Override
                         public void run() {
                             mBattIcon.setImageResource( R.drawable.ic_battery_unknown_black_24dp );
@@ -253,7 +241,7 @@ public class FullscreenActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        SetEnableControls(false);
+        setEnableControls(false);
         
         mJstckMoveVehicle.setOnMoveListener(new JoystickView.OnMoveListener()
         {
@@ -470,7 +458,7 @@ public class FullscreenActivity extends AppCompatActivity {
        EventDispatcher.getInstance().removeAllListeners();
     }
 
-   private void SetEnableControls(final boolean enabled) {
+   private void setEnableControls(final boolean enabled) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -501,25 +489,44 @@ public class FullscreenActivity extends AppCompatActivity {
         });
     }
 
-    private void SetBattIcon( int value ) {
-        mBattPwrValue.setText( value + "%" );
+    private void resetControls(){
+        runOnUiThread( new Runnable() {
+            @Override
+            public void run() {
+                if ( mBtnSwitchCut.isChecked() )
+                    mBtnSwitchCut.setChecked( false );
 
-        if ( value <= 10 )
-            mBattIcon.setImageResource( R.drawable.ic_battery_alert_red_24dp );
-        else if ( value < 25 )
-            mBattIcon.setImageResource( R.drawable.ic_battery_20_black_24dp );
-        else if ( value < 35 )
-            mBattIcon.setImageResource( R.drawable.ic_battery_30_black_24dp );
-        else if ( value < 55 )
-            mBattIcon.setImageResource( R.drawable.ic_battery_50_black_24dp );
-        else if ( value < 65 )
-            mBattIcon.setImageResource( R.drawable.ic_battery_60_black_24dp );
-        else if ( value < 85 )
-            mBattIcon.setImageResource( R.drawable.ic_battery_80_black_24dp );
-        else if ( value < 95 )
-            mBattIcon.setImageResource( R.drawable.ic_battery_90_black_24dp );
-        else
-            mBattIcon.setImageResource( R.drawable.ic_battery_full_black_24dp );
+                mJstckMoveVehicle.resetButtonPosition();
+                mBladeHeight.setProgress( mBladeHeight.getMaxProgress() );
+                mContentView.invalidate();
+            }
+        } );
+    }
+
+    private void setBattIcon( final int value ) {
+        runOnUiThread( new Runnable() {
+            @Override
+            public void run() {
+                mBattPwrValue.setText( value + "%" );
+
+                if ( value <= 10 )
+                    mBattIcon.setImageResource( R.drawable.ic_battery_alert_red_24dp );
+                else if ( value < 25 )
+                    mBattIcon.setImageResource( R.drawable.ic_battery_20_black_24dp );
+                else if ( value < 35 )
+                    mBattIcon.setImageResource( R.drawable.ic_battery_30_black_24dp );
+                else if ( value < 55 )
+                    mBattIcon.setImageResource( R.drawable.ic_battery_50_black_24dp );
+                else if ( value < 65 )
+                    mBattIcon.setImageResource( R.drawable.ic_battery_60_black_24dp );
+                else if ( value < 85 )
+                    mBattIcon.setImageResource( R.drawable.ic_battery_80_black_24dp );
+                else if ( value < 95 )
+                    mBattIcon.setImageResource( R.drawable.ic_battery_90_black_24dp );
+                else
+                    mBattIcon.setImageResource( R.drawable.ic_battery_full_black_24dp );
+            }
+        } );
     }
 }
 

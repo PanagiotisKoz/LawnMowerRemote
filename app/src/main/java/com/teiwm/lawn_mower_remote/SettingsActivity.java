@@ -29,7 +29,7 @@ public class SettingsActivity extends AppCompatActivity {
                 new SettingsFragment()).commit();
     }
 
-    static class SettingsFragment extends PreferenceFragmentCompat {
+    public static class SettingsFragment extends PreferenceFragmentCompat {
 
         @Override
         public void onCreatePreferences( Bundle savedInstanceState, String rootKey)
