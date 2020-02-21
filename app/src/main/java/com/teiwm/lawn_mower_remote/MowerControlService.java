@@ -9,22 +9,21 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
-import java.sql.Time;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.StringTokenizer;
 
 public class MowerControlService extends Service {
     private final String mNotifyChannelId = "Mower_notify_channel_01";
@@ -32,7 +31,7 @@ public class MowerControlService extends Service {
 
     // Prevent sending same data over and over again.
     private final TCPClient mClient = new TCPClient();
-    private boolean mServerOk = false; // If server is up and execute command without errors is true.
+    private boolean mServerOk = true; // If server is up and execute command without errors is true.
     private Thread mConnectivityThread;
     private String mLastCommand = "";
 
@@ -51,6 +50,17 @@ public class MowerControlService extends Service {
         @Override
         public void callback(Event event) {
             EventSetProperty evnt = ( EventSetProperty ) event;
+
+            if ( !SendRemoteCmd( evnt.serialize() ) ) {
+                EventDispatcher.getInstance().riseEvent( new EventIgnored( event ) );
+            }
+        }
+    };
+
+    private final IEventHandler mOnGetProperty = new IEventHandler() {
+        @Override
+        public void callback(Event event) {
+            EventGetProperty evnt = ( EventGetProperty ) event;
 
             if ( !SendRemoteCmd( evnt.serialize() ) ) {
                 EventDispatcher.getInstance().riseEvent( new EventIgnored( event ) );
@@ -127,12 +137,27 @@ public class MowerControlService extends Service {
         public void run() {
             boolean wifiConnected = false;
             while ( !Thread.currentThread().isInterrupted() && !wifiConnected) {
-                NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-                wifiConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+                if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    NetworkCapabilities capabilities = cm.getNetworkCapabilities(cm.getActiveNetwork());
+                    if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                        wifiConnected = true;
+                    }
+                }
+                else {
+                    try {
+                        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+                        wifiConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+                    }
+                    catch ( Exception e ) {
+                        Log.e(LOG_TAG, e.getMessage() );
+                        return;
+                    }
+                }
                 try {
                     Thread.sleep( 2000 );
                 } catch ( InterruptedException e ) {
                     Log.e( LOG_TAG, e.getMessage() );
+                    return;
                 }
             }
             mClient.connect(ip, port);
@@ -143,28 +168,36 @@ public class MowerControlService extends Service {
         if ( response.isEmpty() )
             return;
 
-        String[] tokens = response.split( " " );
+        StringTokenizer tokens = new StringTokenizer( response, " ", false );
         int mowerState;
-        try {
-            mowerState = Integer.parseInt( tokens[ 0 ] );
-        } catch ( NumberFormatException e ) {
-            mowerState = Mower_event_ids.mower_response_ids.command_unknow;
-        }
 
+        mowerState = Integer.valueOf( tokens.nextToken() );
+
+        mServerOk = true;
+        Event event = new Event( -1 );
         switch( mowerState ) {
-            case Mower_event_ids.mower_response_ids.ok:
-                mServerOk = true;
-                EventDispatcher.getInstance().riseEvent( new EventOk() );
+            case EventOk.id:
+                event =  new EventOk();
                 break;
             case Mower_event_ids.mower_response_ids.command_unknow:
             case Mower_event_ids.mower_response_ids.property_unknow:
-                mServerOk = true;
                 Log.e( LOG_TAG, "Protocol error. Last command was: " + mLastCommand );
                 break;
-            case Mower_event_ids.mower_response_ids.property_return:
+            case EventPropertyReturn.id:
+                if ( tokens.countTokens() == 2 ) {
+                    int propertyId = Integer.valueOf( tokens.nextToken() );
+                    int value = Integer.valueOf( tokens.nextToken() );
+                    event = new EventPropertyReturn( propertyId, value );
+                }
+                else
+                    Log.e( LOG_TAG, "Protocol error. response was: " + response );
                 break;
-
+            case EventBattCharging.id:
+                event = new EventBattCharging();
+                break;
         }
+        if ( event.getEventId() != -1 )
+            EventDispatcher.getInstance().riseEvent( event );
     }
 
     private void postNotify( boolean isConnected) {

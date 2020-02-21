@@ -7,7 +7,7 @@ class Event {
         mEventId = type;
     }
 
-    public int getEventId() {
+    int getEventId() {
         return mEventId;
     }
 
@@ -15,40 +15,48 @@ class Event {
 }
 
 class EventConnected extends Event {
-    public static final int id = Local_event_ids.connected;
-    public EventConnected ( ) {
+    static final int id = Local_event_ids.connected;
+    EventConnected ( ) {
         super( id );
     }
 }
 
 class EventDisconnected extends Event {
-    public static final int id = Local_event_ids.disconnected;
+    static final int id = Local_event_ids.disconnected;
 
-    public EventDisconnected ( ) {
+    EventDisconnected ( ) {
         super( id );
     }
 }
 
 class EventOk extends Event {
-    public static final int id = Mower_event_ids.mower_response_ids.ok;
+    static final int id = Mower_event_ids.mower_response_ids.ok;
 
-    public EventOk ( ) {
+    EventOk ( ) {
+        super( id );
+    }
+}
+
+class EventBattCharging extends Event {
+    static final int id = Mower_event_ids.general_ids.batt_charging_alert;
+
+    EventBattCharging ( ) {
         super( id );
     }
 }
 
 class EventFatalError extends Event {
-    public static final int id = Local_event_ids.event_fatal_error;
+    static final int id = Local_event_ids.event_fatal_error;
 
-    public EventFatalError ( ) {
+    EventFatalError ( ) {
         super( id );
     }
 }
 
 class EventIgnored extends Event {
-    public static final int id = Local_event_ids.event_ignored;
+    static final int id = Local_event_ids.event_ignored;
     private final Event mEvent;
-    public EventIgnored ( Event ignored_event )
+    EventIgnored ( Event ignored_event )
     {
         super( id );
         mEvent = ignored_event;
@@ -58,11 +66,11 @@ class EventIgnored extends Event {
 }
 
 class EventMove extends Event {
-    public static final int id = Mower_event_ids.general_ids.move;
+    static final int id = Mower_event_ids.general_ids.move;
     private final Direction mDirection;
     private final int mPower;
 
-    public enum Direction {
+    enum Direction {
         forward,
         backward,
         left,
@@ -73,7 +81,7 @@ class EventMove extends Event {
         bl
     }
 
-    public EventMove ( Direction direction, int power ) {
+    EventMove ( Direction direction, int power ) {
         super( id );
         mDirection = direction;
         mPower = power;
@@ -110,18 +118,18 @@ class EventMove extends Event {
         return id;
     }
 
-    public int getPower(){ return mPower; }
-    public Direction getDirection() { return mDirection; }
+    int getPower(){ return mPower; }
+    Direction getDirection() { return mDirection; }
 
     @Override
-    public String serialize() {
+    String serialize() {
         return super.serialize() + getDirectionId() + " " + mPower;
     }
 }
 
 class EventSetProperty extends Event {
-    public static final int id = Mower_event_ids.general_ids.property_set;
-    public enum Properties {
+    static final int id = Mower_event_ids.general_ids.property_set;
+    enum Properties {
         blade_rpm,
         blade_height_mm,
         camera_on
@@ -130,13 +138,13 @@ class EventSetProperty extends Event {
     private final Properties mProperty;
     private final Object mValue;
 
-    public EventSetProperty ( Properties property, Object value ) {
+    EventSetProperty ( Properties property, Object value ) {
         super( id );
         mProperty = property;
         mValue = value;
     }
 
-    public int getPropertyId() {
+    int getPropertyId() {
         int propertyId = 0;
 
         switch ( mProperty ) {
@@ -154,25 +162,26 @@ class EventSetProperty extends Event {
     }
 
     @Override
-    public String serialize() {
+    String serialize() {
         return super.serialize() + getPropertyId() + " " + mValue;
     }
 }
 
 class EventGetProperty extends Event {
-    private static final int id = Mower_event_ids.general_ids.property_get;
-    public enum Properties {
+    static final int id = Mower_event_ids.general_ids.property_get;
+    enum Properties {
         blade_rpm,
         blade_height_mm,
         camera_on,
         current,
         voltage,
-        power
+        power,
+        batt_percentance
     }
 
     private final Properties mProperty;
 
-    public EventGetProperty ( Properties property ) {
+    EventGetProperty ( Properties property ) {
         super( id );
         mProperty = property;
     }
@@ -199,12 +208,72 @@ class EventGetProperty extends Event {
             case power:
                 propertyId = Mower_event_ids.property_ids.power;
                 break;
+            case batt_percentance:
+                propertyId = Mower_event_ids.property_ids.batt_percentance;
+                break;
         }
         return propertyId;
     }
 
     @Override
-    public String serialize() {
+    String serialize() {
         return super.serialize() + getPropertyId();
     }
+}
+
+class EventPropertyReturn extends Event {
+    static final int id = Mower_event_ids.mower_response_ids.property_return;
+    enum Properties {
+        blade_rpm,
+        blade_height_mm,
+        camera_on,
+        current,
+        voltage,
+        power,
+        batt_percentage,
+        none
+    }
+
+    private final Properties mProperty;
+    private final int mValue;
+
+    EventPropertyReturn ( Properties property, int value ) {
+        super( id );
+        mProperty = property;
+        mValue = value;
+    }
+
+    EventPropertyReturn( int property, int value ) {
+        super( id );
+        mValue = value;
+
+        switch ( property ) {
+            case Mower_event_ids.property_ids.blade_rpm:
+                mProperty = Properties.blade_rpm;
+                break;
+            case Mower_event_ids.property_ids.blade_height_mm:
+                mProperty = Properties.blade_height_mm;
+                break;
+            case Mower_event_ids.property_ids.camera_on:
+                mProperty = Properties.camera_on;
+                break;
+            case Mower_event_ids.property_ids.current:
+                mProperty = Properties.current;
+                break;
+            case Mower_event_ids.property_ids.voltage:
+                mProperty = Properties.voltage;
+                break;
+            case Mower_event_ids.property_ids.power:
+                mProperty = Properties.power;
+                break;
+            case Mower_event_ids.property_ids.batt_percentance:
+                mProperty = Properties.batt_percentage;
+                break;
+            default:
+                mProperty = Properties.none;
+        }
+    }
+
+    Properties getProperty() { return mProperty; }
+    int getmValue() { return mValue; }
 }
