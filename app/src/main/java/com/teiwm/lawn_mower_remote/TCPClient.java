@@ -112,14 +112,14 @@ class TCPClient {
     public void SetOnConnectListener ( OnConnectListener listener ) {
         mConnectCallback = listener;
     }
-
-    public void SetOnDisconnectListener ( OnDisconnectListener listener ) {
-        mDisconnectCallback = listener;
-    }
-
+    public void SetOnDisconnectListener ( OnDisconnectListener listener ) { mDisconnectCallback = listener; }
     public void SetOnReceiveListener ( OnReceiveListener listener ) {
         mReceiveCallback = listener;
     }
+
+    public void RemoveOnDisconnectListener() { mDisconnectCallback = null; }
+    public void RemoveOnConnectListener() { mConnectCallback = null; }
+    public void RemoveOnReceiveListener() { mReceiveCallback = null; }
 
     /**
      * Send data as bytes to the server

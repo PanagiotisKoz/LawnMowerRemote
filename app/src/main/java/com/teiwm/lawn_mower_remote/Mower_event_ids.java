@@ -6,11 +6,11 @@ class Mower_event_ids {
         static final int property_get = 30;
         static final int property_set = 31;
         static final int move = 40;
-        static final int batt_charging_alert = 50;
     }
 
     class mower_response_ids {
         static final int ok = 8;
+        static final int batt_charging_alert = 10;
         static final int command_unknow = 11;
         static final int property_unknow = 12;
         static final int property_return = 13;
@@ -34,7 +34,7 @@ class Mower_event_ids {
         static final int current = 220;
         static final int voltage = 221;
         static final int power = 222;
-        static final int batt_percentance = 223;
+        static final int batt_percentage = 223;
         static final int temp = 230;
     }
     // End of LM events.

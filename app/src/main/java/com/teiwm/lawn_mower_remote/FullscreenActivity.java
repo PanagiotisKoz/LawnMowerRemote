@@ -37,9 +37,10 @@ public class FullscreenActivity extends AppCompatActivity {
     private final String LOG_TAG = "Mower client activity";
 
     /**
-     * Battery update status intervals in minutes.
+     * Battery update status intervals in seconds.
      */
-    private final int BATT_UPDATE_INTERVALL = 1;
+    private final int BATT_UPDATE_INTERVALL = 30;
+
     /**
      * Some older devices needs a small delay between UI widget updates
      * and a change of the status and navigation bar.
@@ -62,7 +63,7 @@ public class FullscreenActivity extends AppCompatActivity {
         @Override
         public void run() {
             EventDispatcher.getInstance().riseEvent(
-                    new EventGetProperty( EventGetProperty.Properties.batt_percentance ) );
+                    new EventGetProperty( EventGetProperty.Properties.batt_percentage ) );
         }
     };
 
@@ -70,7 +71,7 @@ public class FullscreenActivity extends AppCompatActivity {
         @Override
         public void callback(Event event) {
             setEnableControls( true );
-            mScheduler.schedule( mUpdateBattValue, 0, TimeUnit.MINUTES.toMillis( BATT_UPDATE_INTERVALL ) );
+            mScheduler.schedule( mUpdateBattValue, 0, TimeUnit.SECONDS.toMillis( BATT_UPDATE_INTERVALL ) );
         }
     };
 
@@ -83,7 +84,6 @@ public class FullscreenActivity extends AppCompatActivity {
                 public void run() {
                     mBattIcon.setImageResource( R.drawable.ic_battery_unknown_black_24dp );
                     mBattPwrValue.setText( getString( R.string.msg_batt_unknow ) );
-                    mContentView.invalidate();
                 }
             });
             setEnableControls( false );
@@ -149,8 +149,6 @@ public class FullscreenActivity extends AppCompatActivity {
                             break;
                     }
                     break;
-                case EventMove.id:
-                    mJstckMoveVehicle.resetButtonPosition();
             }
             mContentView.invalidate();
         }
@@ -242,7 +240,7 @@ public class FullscreenActivity extends AppCompatActivity {
         super.onStart();
 
         setEnableControls(false);
-        
+
         mJstckMoveVehicle.setOnMoveListener(new JoystickView.OnMoveListener()
         {
             public void onMove( int angle, int strength ) {
@@ -268,7 +266,7 @@ public class FullscreenActivity extends AppCompatActivity {
 
                 EventDispatcher.getInstance().riseEvent( new EventMove( move_dir, strength ) );
             }
-        }, 400);
+        }, 300);
 
         mBtnSwitchCut.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ) {

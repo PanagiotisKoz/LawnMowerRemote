@@ -38,7 +38,7 @@ class EventOk extends Event {
 }
 
 class EventBattCharging extends Event {
-    static final int id = Mower_event_ids.general_ids.batt_charging_alert;
+    static final int id = Mower_event_ids.mower_response_ids.batt_charging_alert;
 
     EventBattCharging ( ) {
         super( id );
@@ -176,7 +176,8 @@ class EventGetProperty extends Event {
         current,
         voltage,
         power,
-        batt_percentance
+        batt_percentage,
+        temp
     }
 
     private final Properties mProperty;
@@ -208,8 +209,11 @@ class EventGetProperty extends Event {
             case power:
                 propertyId = Mower_event_ids.property_ids.power;
                 break;
-            case batt_percentance:
-                propertyId = Mower_event_ids.property_ids.batt_percentance;
+            case batt_percentage:
+                propertyId = Mower_event_ids.property_ids.batt_percentage;
+                break;
+            case temp:
+                propertyId = Mower_event_ids.property_ids.temp;
                 break;
         }
         return propertyId;
@@ -266,7 +270,7 @@ class EventPropertyReturn extends Event {
             case Mower_event_ids.property_ids.power:
                 mProperty = Properties.power;
                 break;
-            case Mower_event_ids.property_ids.batt_percentance:
+            case Mower_event_ids.property_ids.batt_percentage:
                 mProperty = Properties.batt_percentage;
                 break;
             default:

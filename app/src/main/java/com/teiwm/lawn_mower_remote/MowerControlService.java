@@ -40,6 +40,9 @@ public class MowerControlService extends Service {
         public void callback(Event event) {
             EventMove evnt = ( EventMove ) event;
 
+            if ( evnt.getPower() == 0 )
+                mLastCommand = "";
+
             if ( !SendRemoteCmd( evnt.serialize() ) ) {
                 EventDispatcher.getInstance().riseEvent( new EventIgnored( event ) );
             }
@@ -62,6 +65,7 @@ public class MowerControlService extends Service {
         public void callback(Event event) {
             EventGetProperty evnt = ( EventGetProperty ) event;
 
+            mLastCommand = "";
             if ( !SendRemoteCmd( evnt.serialize() ) ) {
                 EventDispatcher.getInstance().riseEvent( new EventIgnored( event ) );
             }
@@ -291,6 +295,7 @@ public class MowerControlService extends Service {
 
     @Override
     public void onDestroy() {
+        mClient.RemoveOnDisconnectListener();
         mClient.disconnect();
         unregisterReceiver( mWifiStateReceiver );
 
