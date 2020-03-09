@@ -95,6 +95,8 @@ public class FullscreenActivity extends AppCompatActivity {
         @Override
         public void callback( Event event ) {
             resetControls();
+            setEnableControls( false );
+            mScheduler.cancel();
 
             runOnUiThread( new Runnable() {
                 @Override
@@ -103,8 +105,6 @@ public class FullscreenActivity extends AppCompatActivity {
                     mBattPwrValue.setText( getString( R.string.msg_batt_charging ) );
                 }
             });
-
-            setEnableControls( false );
         }
     };
 
