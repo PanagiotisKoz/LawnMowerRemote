@@ -196,6 +196,9 @@ public class MowerControlService extends Service {
                 else
                     Log.e( LOG_TAG, "Protocol error. response was: " + response );
                 break;
+            case EventLowBatt.id:
+                event = new EventLowBatt();
+                break;
             case EventBattCharging.id:
                 event = new EventBattCharging();
                 break;

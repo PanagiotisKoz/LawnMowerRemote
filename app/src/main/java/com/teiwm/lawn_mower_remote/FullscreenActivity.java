@@ -91,6 +91,23 @@ public class FullscreenActivity extends AppCompatActivity {
         }
     };
 
+    private final IEventHandler mOnLowBatt = new IEventHandler() {
+        @Override
+        public void callback( Event event ) {
+            resetControls();
+            setEnableControls( false );
+            mScheduler.cancel();
+
+            runOnUiThread( new Runnable() {
+                @Override
+                public void run() {
+                    mBattIcon.setImageResource( R.drawable.ic_battery_alert_red_24dp );
+                    mBattPwrValue.setText( getString( R.string.msg_low_batt ) );
+                }
+            });
+        }
+    };
+
     private final IEventHandler mOnCharge = new IEventHandler() {
         @Override
         public void callback( Event event ) {
@@ -396,6 +413,7 @@ public class FullscreenActivity extends AppCompatActivity {
         EventDispatcher.getInstance().addEventListener( EventDisconnected.id, mOnDisconnected );
         EventDispatcher.getInstance().addEventListener( EventPropertyReturn.id, mOnPropertyReturn );
         EventDispatcher.getInstance().addEventListener( EventBattCharging.id, mOnCharge );
+        EventDispatcher.getInstance().addEventListener( EventLowBatt.id, mOnLowBatt );
         EventDispatcher.getInstance().addEventListener( EventIgnored.id, mOnEventIgnored );
         EventDispatcher.getInstance().addEventListener( EventOk.id, mOnOk );
 
@@ -445,6 +463,7 @@ public class FullscreenActivity extends AppCompatActivity {
         EventDispatcher.getInstance().removeEventListener( mOnDisconnected );
         EventDispatcher.getInstance().removeEventListener( mOnPropertyReturn );
         EventDispatcher.getInstance().removeEventListener( mOnCharge );
+        EventDispatcher.getInstance().removeEventListener( mOnLowBatt );
         EventDispatcher.getInstance().removeEventListener( mOnEventIgnored );
         EventDispatcher.getInstance().removeEventListener( mOnOk );
     }

@@ -10,6 +10,7 @@ class Mower_event_ids {
 
     class mower_response_ids {
         static final int ok = 8;
+        static final int low_batt_alert = 9;
         static final int batt_charging_alert = 10;
         static final int command_unknow = 11;
         static final int property_unknow = 12;
