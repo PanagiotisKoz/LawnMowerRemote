@@ -37,6 +37,14 @@ class EventOk extends Event {
     }
 }
 
+class EventLowBatt extends Event {
+    static final int id = Mower_event_ids.mower_response_ids.low_batt_alert;
+
+    EventLowBatt ( ) {
+        super( id );
+    }
+}
+
 class EventBattCharging extends Event {
     static final int id = Mower_event_ids.mower_response_ids.batt_charging_alert;
 
